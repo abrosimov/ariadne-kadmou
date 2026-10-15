@@ -17,20 +17,28 @@ export interface SourceFile {
 	readonly text: string;
 }
 
+/** What a scan learned of each file, by absolute path: unchanged files are not read again. */
+export type SourceCache = Map<string, { readonly mtimeMs: number; readonly size: number; readonly text?: string }>;
+
 /**
  * Text files below `root` that contain `marker`, outside `excluded`,
- * dot-entries and dependency trees.
+ * dot-entries and dependency trees. `cache` carries over between scans.
  */
-export async function filesMentioning(root: string, excluded: string, marker: string): Promise<SourceFile[]> {
-	const found: SourceFile[] = [];
+export async function filesMentioning(
+	root: string,
+	excluded: string,
+	marker: string,
+	cache: SourceCache = new Map(),
+): Promise<SourceFile[]> {
+	const seen = new Set<string>();
 	const read = async (file: string): Promise<void> => {
 		try {
-			const { size } = await stat(file);
-			if (size > MAX_FILE_BYTES) return;
-			const text = await readFile(file, 'utf8');
-			if (text.includes(marker) && !text.includes('\0')) {
-				found.push({ path: path.relative(root, file).split(path.sep).join('/'), text });
-			}
+			const { mtimeMs, size } = await stat(file);
+			seen.add(file);
+			const known = cache.get(file);
+			if (known?.mtimeMs === mtimeMs && known.size === size) return;
+			const text = size > MAX_FILE_BYTES ? '' : await readFile(file, 'utf8');
+			cache.set(file, { mtimeMs, size, ...(text.includes(marker) && !text.includes('\0') ? { text } : {}) });
 		} catch {
 			// Gone or unreadable since it was listed.
 		}
@@ -49,5 +57,10 @@ export async function filesMentioning(root: string, excluded: string, marker: st
 		}
 	};
 	await walk(root);
-	return found.toSorted((a, b) => a.path.localeCompare(b.path));
+	const found: SourceFile[] = [];
+	for (const [file, { text }] of cache) {
+		if (!seen.has(file)) cache.delete(file);
+		else if (text !== undefined) found.push({ path: path.relative(root, file).split(path.sep).join('/'), text });
+	}
+	return found.sort((a, b) => a.path.localeCompare(b.path));
 }

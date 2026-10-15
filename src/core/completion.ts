@@ -36,8 +36,9 @@ export function complete(query: string, source: CompletionSource): Completion[] 
 	if (hash === -1) {
 		return matching(source.notes(authority), rest, (path) => formatReference({ kind: 'note', authority, path }));
 	}
-	const path = decode(rest.slice(0, hash)) ?? '';
+	const path = decode(rest.slice(0, hash));
 	const typed = rest.slice(hash + 1);
+	if (path === undefined) return [];
 	if (path === '') {
 		return matching(source.anchors(authority), typed, (slug) =>
 			formatReference({ kind: 'anchor', authority, slug }),
@@ -53,7 +54,7 @@ function matching(items: readonly string[], typed: string, reference: (item: str
 	const needle = (decode(typed) ?? typed).toLowerCase();
 	return items
 		.filter((item) => item.toLowerCase().includes(needle))
-		.toSorted((a, b) => {
+		.sort((a, b) => {
 			const byRank = rank(a, needle) - rank(b, needle);
 			return byRank === 0 ? a.localeCompare(b) : byRank;
 		})

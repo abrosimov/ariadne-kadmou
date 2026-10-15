@@ -81,9 +81,14 @@ export function parseReference(uri: string, contract: GrammarContract): Result<K
 
 export function formatReference(reference: KadmosReference): string {
 	if (reference.kind === 'anchor') return `${SCHEME}${reference.authority}/#${reference.slug}`;
-	const path = reference.path.split('/').map(encodeURIComponent).join('/');
-	const fragment = reference.fragment === undefined ? '' : `#${encodeURIComponent(reference.fragment)}`;
+	const path = reference.path.split('/').map(encode).join('/');
+	const fragment = reference.fragment === undefined ? '' : `#${encode(reference.fragment)}`;
 	return `${SCHEME}${reference.authority}/${path}${fragment}`;
+}
+
+// Parentheses too, which would end a Markdown link target.
+function encode(text: string): string {
+	return encodeURIComponent(text).replaceAll('(', '%28').replaceAll(')', '%29');
 }
 
 /** Percent-decodes, or undefined when the escapes are malformed. */

@@ -16,20 +16,23 @@ export interface ReferenceLink {
 	readonly uri: string;
 }
 
-// [text](kadmos://...) or [text](<kadmos://...>), with an optional title.
+// [text](kadmos://...) or [text](<kadmos://...>), with an optional title, matched
+// where a bracket opens. Link text holds no unescaped bracket, so the innermost
+// link wins, as in CommonMark; a bare target may hold balanced parentheses.
 const LINK =
-	/\[((?:\\.|[^\\\]\n])*)\]\(\s*(<kadmos:\/\/[^>\n]*>|kadmos:\/\/[^\s)]*)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)/gu;
+	/\[((?:\\.|[^\\[\]\n])*)\]\(\s*(<kadmos:\/\/[^>\n]*>|kadmos:\/\/(?:[^\s()]|\([^\s()]*\))*)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)/uy;
 // What ends a reference being typed.
 const BOUNDARY = /[\s()<>[\]]/u;
 
 export function findReferenceLinks(text: string): ReferenceLink[] {
 	const links: ReferenceLink[] = [];
-	for (const match of text.matchAll(LINK)) {
-		const [whole, label = '', target = ''] = match;
-		const from = match.index;
+	for (let from = text.indexOf('['); from !== -1; from = text.indexOf('[', from + 1)) {
 		// A bracket after an odd run of backslashes is escaped and opens no link.
 		const backslashes = /\\*$/u.exec(text.slice(0, from))?.[0].length ?? 0;
-		if (backslashes % 2 === 1) continue;
+		LINK.lastIndex = from;
+		const match = backslashes % 2 === 1 ? null : LINK.exec(text);
+		if (match === null) continue;
+		const [whole, label = '', target = ''] = match;
 		const textFrom = from + 1;
 		const targetFrom = from + whole.indexOf(target, label.length + 2);
 		const angled = target.startsWith('<');
@@ -44,6 +47,7 @@ export function findReferenceLinks(text: string): ReferenceLink[] {
 			uriTo: uriFrom + uri.length,
 			uri,
 		});
+		from += whole.length - 1;
 	}
 	return links;
 }

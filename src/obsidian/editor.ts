@@ -55,19 +55,20 @@ export class EditorLinks {
 function build(view: EditorView, index: KadmosIndex | undefined): DecorationSet {
 	const builder = new RangeSetBuilder<Decoration>();
 	if (index === undefined) return builder.finish();
+	const { doc } = view.state;
 	const tree = syntaxTree(view.state);
+	// Visible ranges may split one line; each line is marked once, in order.
+	let next = 1;
 	for (const { from, to } of view.visibleRanges) {
-		let line = view.state.doc.lineAt(from);
-		for (;;) {
+		for (let number = Math.max(next, doc.lineAt(from).number); number <= doc.lineAt(to).number; number++) {
+			const line = doc.line(number);
 			for (const link of findReferenceLinks(line.text)) {
-				const start = line.from + link.from;
-				if (inCode(tree.resolveInner(start + 1, 1).name)) continue;
+				if (inCode(tree.resolveInner(line.from + link.from + 1, 1).name)) continue;
 				const mark = Decoration.mark({ attributes: attributes(link.uri, index) });
 				builder.add(line.from + link.textFrom, line.from + link.textTo, mark);
 				builder.add(line.from + link.uriFrom, line.from + link.uriTo, mark);
 			}
-			if (line.to >= to || line.number >= view.state.doc.lines) break;
-			line = view.state.doc.line(line.number + 1);
+			next = number + 1;
 		}
 	}
 	return builder.finish();

@@ -48,3 +48,7 @@ void test('anchor slugs are completed after the hash', () => {
 void test('a malformed escape is matched as typed', () => {
 	assert.deepEqual(complete('oikos/%E0', source), []);
 });
+
+void test('a malformed path before the hash completes nothing, not anchors', () => {
+	assert.deepEqual(complete('oikos/50%#', source), []);
+});

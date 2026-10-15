@@ -57,3 +57,21 @@ void test('only an odd run of backslashes escapes the bracket', () => {
 		assert.equal(findReferenceLinks(`${'\\'.repeat(backslashes)}[a](kadmos://oikos/a.md)`).length, links);
 	}
 });
+
+void test('a link after an escaped bracket is found, and the innermost link wins', () => {
+	assert.deepEqual(
+		findReferenceLinks(String.raw`\[x [a](kadmos://oikos/b.md)`).map((link) => link.uri),
+		['kadmos://oikos/b.md'],
+	);
+	const text = '[see [a](kadmos://oikos/b.md)';
+	const [link] = findReferenceLinks(text);
+	assert.ok(link !== undefined);
+	assert.equal(text.slice(link.textFrom, link.textTo), 'a');
+});
+
+void test('a bare target may hold balanced parentheses', () => {
+	assert.deepEqual(
+		findReferenceLinks('[a](kadmos://oikos/b_(x).md) (after)').map((link) => link.uri),
+		['kadmos://oikos/b_(x).md'],
+	);
+});

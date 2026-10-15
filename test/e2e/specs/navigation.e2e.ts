@@ -1,4 +1,6 @@
 import { $, $$, browser, expect } from '@wdio/globals';
+import type { WorkspaceLeaf } from 'obsidian';
+import { obsidianPage } from 'wdio-obsidian-service';
 import { ACTIVE, activeFile, captureWindowOpen, clickLink, link, open, recorded, statuses } from '../support.ts';
 
 const SOURCE = 'docs/decisions/source.md';
@@ -141,28 +143,50 @@ describe('kadmos:// navigation', () => {
 	});
 
 	describe('in a pop-out window', () => {
-		it('follows a link', async () => {
-			const main = await browser.getWindowHandle();
-			await browser.executeObsidian(async ({ app, obsidian }, file) => {
-				const target = app.vault.getAbstractFileByPath(file);
-				if (!(target instanceof obsidian.TFile)) throw new Error(`no file ${file}`);
-				await app.workspace.openPopoutLeaf().openFile(target, { state: { mode: 'preview' } });
-			}, SOURCE);
-			let popout = main;
-			await browser.waitUntil(async () => {
-				const handles = await browser.getWindowHandles();
-				popout = handles.find((handle) => handle !== main) ?? main;
-				return popout !== main;
+		for (const [name, reloadPlugin] of [
+			['opened after the plugin loaded', false],
+			['already open when the plugin loads', true],
+		] as const) {
+			it(`follows a link in a window ${name}`, async () => {
+				const main = await browser.getWindowHandle();
+				await browser.executeObsidian(async ({ app, obsidian }, file) => {
+					const target = app.vault.getAbstractFileByPath(file);
+					if (!(target instanceof obsidian.TFile)) throw new Error(`no file ${file}`);
+					await app.workspace.openPopoutLeaf().openFile(target, { state: { mode: 'preview' } });
+				}, SOURCE);
+				if (reloadPlugin) {
+					await obsidianPage.disablePlugin('ariadne-kadmou');
+					await obsidianPage.enablePlugin('ariadne-kadmou');
+				}
+				// Live preview renders in an unfocused pop-out; reading view may wait for focus.
+				await browser.executeObsidian(async ({ app }) => {
+					const leaves: WorkspaceLeaf[] = [];
+					app.workspace.iterateAllLeaves((leaf) => {
+						if (leaf.getContainer() !== app.workspace.rootSplit) leaves.push(leaf);
+					});
+					for (const leaf of leaves) {
+						await leaf.setViewState({
+							...leaf.getViewState(),
+							state: { ...leaf.getViewState().state, mode: 'source', source: false },
+						});
+					}
+				});
+				let popout = main;
+				await browser.waitUntil(async () => {
+					const handles = await browser.getWindowHandles();
+					popout = handles.find((handle) => handle !== main) ?? main;
+					return popout !== main;
+				});
+				await browser.switchToWindow(popout);
+				try {
+					await clickLink('.cm-content', 'resolved', '.workspace-leaf');
+					await browser.waitUntil(async () => (await activeFile()) === 'docs/standards/target.md');
+				} finally {
+					await browser.closeWindow();
+					await browser.switchToWindow(main);
+				}
 			});
-			await browser.switchToWindow(popout);
-			try {
-				await clickLink('.markdown-reading-view', 'resolved');
-				await browser.waitUntil(async () => (await activeFile()) === 'docs/standards/target.md');
-			} finally {
-				await browser.closeWindow();
-				await browser.switchToWindow(main);
-			}
-		});
+		}
 	});
 
 	describe('live preview', () => {

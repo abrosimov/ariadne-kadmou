@@ -54,7 +54,7 @@ export function anchorsNaming(index: AnchorIndex, path: string): AnchorSite[] {
 	return [...index.sites.values()]
 		.flat()
 		.filter(({ declaration: { target } }) => target.authority === OIKOS && target.path === path)
-		.toSorted((a, b) => a.declaration.slug.localeCompare(b.declaration.slug));
+		.sort((a, b) => a.declaration.slug.localeCompare(b.declaration.slug));
 }
 
 /**

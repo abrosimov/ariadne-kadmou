@@ -25,12 +25,12 @@ export async function open(path: string, mode: Mode): Promise<void> {
 	await $(`${ACTIVE} ${container} [data-kadmos-status]`).waitForExist();
 }
 
-/** The marked link with this text in the active leaf, once it is there. */
-export async function link(container: string, text: string): Promise<WebdriverIO.Element> {
+/** The marked link with this text in `container` of the active leaf, once it is there. */
+export async function link(container: string, text: string, leaf = ACTIVE): Promise<WebdriverIO.Element> {
 	let found: WebdriverIO.Element | undefined;
 	await browser.waitUntil(
 		async () => {
-			for (const element of await $$(`${ACTIVE} ${container} [data-kadmos-status]`).getElements()) {
+			for (const element of await $$(`${leaf} ${container} [data-kadmos-status]`).getElements()) {
 				if ((await element.getText()) === text) found = element;
 			}
 			return found !== undefined;
@@ -41,8 +41,8 @@ export async function link(container: string, text: string): Promise<WebdriverIO
 	return found;
 }
 
-export async function clickLink(container: string, text: string): Promise<void> {
-	const element = await link(container, text);
+export async function clickLink(container: string, text: string, leaf = ACTIVE): Promise<void> {
+	const element = await link(container, text, leaf);
 	await element.click();
 }
 

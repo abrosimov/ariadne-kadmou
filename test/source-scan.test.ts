@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import fs, { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises';
+import fs, { mkdir, mkdtemp, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import { syncBuiltinESMExports } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { filesMentioning } from '../src/core/source-scan.ts';
+import { filesMentioning, type SourceCache } from '../src/core/source-scan.ts';
 
 const MARKER = 'ariadne-kadmou';
 
@@ -48,4 +48,27 @@ void test('a file that vanishes after it was listed is skipped', async (context)
 		context.mock.restoreAll();
 		syncBuiltinESMExports();
 	}
+});
+
+void test('a cached scan reads only what changed and forgets what is gone', async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), 'source-scan-'));
+	const a = path.join(root, 'a.go');
+	const b = path.join(root, 'b.go');
+	await writeFile(a, MARKER);
+	await writeFile(b, 'none');
+	const cache: SourceCache = new Map();
+	const first = await filesMentioning(root, '', MARKER, cache);
+	assert.deepEqual(
+		first.map((file) => file.path),
+		['a.go'],
+	);
+	await writeFile(b, `${MARKER} now`);
+	await utimes(b, new Date(), new Date(Date.now() + 5000));
+	await rm(a);
+	const found = await filesMentioning(root, '', MARKER, cache);
+	assert.deepEqual(
+		found.map((file) => [file.path, file.text]),
+		[['b.go', `${MARKER} now`]],
+	);
+	assert.deepEqual([...cache.keys()], [b]);
 });

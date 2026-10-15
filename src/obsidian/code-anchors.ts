@@ -9,7 +9,7 @@ import { type App, FileSystemAdapter } from 'obsidian';
 import { type AnchorIndex, type AnchorSite, codeLink, indexAnchors } from '../core/anchor-index.ts';
 import type { VaultContract } from '../core/contract.ts';
 import { repositoryIsParent } from '../core/repository.ts';
-import { filesMentioning } from '../core/source-scan.ts';
+import { filesMentioning, type SourceCache } from '../core/source-scan.ts';
 import { ROOT_MARKER } from '../core/vault-location.ts';
 
 export interface CodeAnchors {
@@ -23,6 +23,7 @@ export async function scanCodeAnchors(
 	app: App,
 	vaultPath: string,
 	contract: VaultContract,
+	cache: SourceCache,
 ): Promise<CodeAnchors | string> {
 	const { codeAnchors } = contract;
 	const adapter = app.vault.adapter;
@@ -33,7 +34,7 @@ export async function scanCodeAnchors(
 	const root = repositoryIsParent(vaultPath, path.basename(opened), parentMarker) ? path.dirname(opened) : opened;
 	const vault = path.join(opened, vaultPath);
 	// A vault at the repository root leaves no file outside it to anchor.
-	const files = root === vault ? [] : await filesMentioning(root, vault, codeAnchors.marker);
+	const files = root === vault ? [] : await filesMentioning(root, vault, codeAnchors.marker, cache);
 	return { root, index: indexAnchors(files, { ...contract, codeAnchors }) };
 }
 

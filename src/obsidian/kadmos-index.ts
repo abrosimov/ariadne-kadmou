@@ -43,7 +43,7 @@ export class KadmosIndex {
 	activeNotes(): readonly string[] {
 		this.active ??= this.notePaths()
 			.filter((path) => !this.contract.retentionRoots.includes(firstSegment(path)))
-			.toSorted((a, b) => a.localeCompare(b));
+			.sort((a, b) => a.localeCompare(b));
 		return this.active;
 	}
 

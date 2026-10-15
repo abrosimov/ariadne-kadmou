@@ -111,6 +111,9 @@ export default defineConfig(
 			// The declarative settings API needs Obsidian 1.13; minAppVersion is 1.8.7.
 			'obsidianmd/settings-tab/prefer-setting-definitions': 'off',
 
+			// toSorted is ES2023; minAppVersion 1.8.7 still runs on installers with Chrome 106.
+			'unicorn/no-array-sort': 'off',
+
 			// Unicorn: taste, not correctness.
 			'unicorn/prevent-abbreviations': 'off',
 			'unicorn/no-null': 'off',
