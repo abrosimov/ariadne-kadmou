@@ -1,3 +1,5 @@
 main.js
 package-lock.json
 test/vectors/
+test/e2e/vaults/
+.obsidian-cache/

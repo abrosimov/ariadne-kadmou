@@ -1,0 +1,10 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		// WebdriverIO's own declarations do not check under this compiler's settings.
+		"skipLibCheck": true,
+		"types": ["node", "@wdio/globals/types", "@wdio/mocha-framework", "wdio-obsidian-service"]
+	},
+	"include": ["specs/**/*.ts"],
+	"exclude": []
+}
