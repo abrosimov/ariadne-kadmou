@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "ariadne-kadmou",
+	"name": "Ariadne kadmou",
 	"version": "1.0.0",
 	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"description": "Navigation for kadmos vaults: kadmos:// references across instances and code anchors, with findings from the Lynkeus validator.",
+	"author": "abrosimov",
+	"authorUrl": "https://github.com/abrosimov/ariadne-kadmou",
+	"isDesktopOnly": true
 }
