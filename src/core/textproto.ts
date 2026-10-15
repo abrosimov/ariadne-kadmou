@@ -23,7 +23,7 @@ export function parseTextproto(source: string): TextprotoMessage {
 	const peek = (): Token | undefined => tokens[pos];
 	const next = (): Token => {
 		const token = tokens[pos++];
-		if (!token) throw new TextprotoError('unexpected end of input');
+		if (token === undefined) throw new TextprotoError('unexpected end of input');
 		return token;
 	};
 
@@ -31,8 +31,8 @@ export function parseTextproto(source: string): TextprotoMessage {
 		const fields = new Map<string, TextprotoValue[]>();
 		for (;;) {
 			const token = peek();
-			if (!token) {
-				if (closing) throw new TextprotoError(`missing "${closing}"`);
+			if (token === undefined) {
+				if (closing !== null) throw new TextprotoError(`missing "${closing}"`);
 				return { fields };
 			}
 			if (token.kind === 'punct' && token.text === closing) {
@@ -56,8 +56,8 @@ export function parseTextproto(source: string): TextprotoMessage {
 				value = parseScalar(next());
 			}
 			const values = fields.get(name.text);
-			if (values) values.push(value);
-			else fields.set(name.text, [value]);
+			if (values === undefined) fields.set(name.text, [value]);
+			else values.push(value);
 			const after = peek();
 			if (after?.kind === 'punct' && (after.text === ';' || after.text === ',')) pos++;
 		}
@@ -68,16 +68,20 @@ export function parseTextproto(source: string): TextprotoMessage {
 
 function parseScalar(token: Token): string | number | boolean {
 	switch (token.kind) {
-		case 'string':
+		case 'string': {
 			return token.text;
-		case 'number':
+		}
+		case 'number': {
 			return Number(token.text);
-		case 'ident':
+		}
+		case 'ident': {
 			if (token.text === 'true') return true;
 			if (token.text === 'false') return false;
 			return token.text;
-		default:
+		}
+		case 'punct': {
 			throw new TextprotoError(`line ${token.line}: expected a value, found "${token.text}"`);
+		}
 	}
 }
 
@@ -125,17 +129,17 @@ function tokenize(source: string): Token[] {
 				}
 			}
 			// Adjacent string literals concatenate.
-			const last = tokens[tokens.length - 1];
+			const last = tokens.at(-1);
 			if (last?.kind === 'string') last.text += text;
 			else tokens.push({ kind: 'string', text, line });
 		} else if (/[A-Za-z_]/.test(ch)) {
 			const match = /^[A-Za-z_][A-Za-z0-9_.]*/.exec(source.slice(i));
-			const text = match ? match[0] : ch;
+			const text = match === null ? ch : match[0];
 			tokens.push({ kind: 'ident', text, line });
 			i += text.length;
 		} else if (/[-0-9.]/.test(ch)) {
 			const match = /^-?[0-9.][0-9.eE+-]*/.exec(source.slice(i));
-			const text = match ? match[0] : ch;
+			const text = match === null ? ch : match[0];
 			if (Number.isNaN(Number(text))) throw new TextprotoError(`line ${line}: bad number "${text}"`);
 			tokens.push({ kind: 'number', text, line });
 			i += text.length;

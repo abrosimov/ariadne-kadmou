@@ -8,9 +8,11 @@ void test('the source vault schema yields the contract', () => {
 	assert.deepEqual(contract.retentionRoots, ['archive', 'graveyard']);
 	assert.ok(contract.excludedRootDirectories.includes('templates'));
 	assert.ok(contract.excludedFileNames.includes('README.md'));
-	assert.equal(contract.codeAnchors?.marker, 'ariadne-kadmou');
-	assert.deepEqual(contract.codeAnchors?.relations, ['implements', 'tests', 'evidences']);
-	assert.equal(contract.codeAnchors?.reverseField, 'anchored_by');
+	const anchors = contract.codeAnchors;
+	assert.ok(anchors !== undefined);
+	assert.equal(anchors.marker, 'ariadne-kadmou');
+	assert.deepEqual(anchors.relations, ['implements', 'tests', 'evidences']);
+	assert.equal(anchors.reverseField, 'anchored_by');
 });
 
 void test('the distributed schema parses and may lack code anchors', () => {

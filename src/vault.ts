@@ -22,9 +22,12 @@ export async function loadKadmosVault(app: App): Promise<KadmosVault> {
 	const reader: MarkerReader = {
 		read: async (path) => {
 			const normalized = normalizePath(path);
-			return (await adapter.exists(normalized)) ? adapter.read(normalized) : undefined;
+			return (await adapter.exists(normalized)) ? await adapter.read(normalized) : undefined;
 		},
-		isFolder: async (path) => (await adapter.stat(normalizePath(path)))?.type === 'folder',
+		isFolder: async (path) => {
+			const stat = await adapter.stat(normalizePath(path));
+			return stat?.type === 'folder';
+		},
 	};
 
 	const location = await locateVault(reader);

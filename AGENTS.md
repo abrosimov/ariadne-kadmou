@@ -8,7 +8,7 @@
 
 ## Environment & tooling
 
-- Node.js: use current LTS (Node 18+ recommended).
+- Node.js: 22.18 or later (tests run on Node's type stripping).
 - **Package manager: npm** (required for this sample - `package.json` defines npm scripts and dependencies).
 - **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
 - Types: `obsidian` type definitions.
@@ -173,11 +173,7 @@ export default class MyPlugin extends Plugin {
 	settings!: MySettings;
 
 	async onload() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<MySettings>,
-		);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<MySettings>);
 		registerCommands(this);
 	}
 }

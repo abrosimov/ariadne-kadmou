@@ -52,7 +52,7 @@ export function parseContract(schemaSource: string): VaultContract {
 
 function readContract(schema: TextprotoMessage): VaultContract {
 	const config = onlyMessage(schema, 'config');
-	if (!config) throw new ContractError(`${SCHEMA_FILE} declares no config`);
+	if (config === undefined) throw new ContractError(`${SCHEMA_FILE} declares no config`);
 
 	const retentionRoots = messages(config, 'retention_projection').flatMap((projection) =>
 		strings(projection, 'root_directory'),
@@ -62,15 +62,15 @@ function readContract(schema: TextprotoMessage): VaultContract {
 	}
 
 	const scope = onlyMessage(config, 'validation_scope');
-	const excludedRootDirectories = scope ? strings(scope, 'excluded_root_directory') : [];
-	const excludedFileNames = scope ? strings(scope, 'excluded_file_name') : [];
+	const excludedRootDirectories = scope === undefined ? [] : strings(scope, 'excluded_root_directory');
+	const excludedFileNames = scope === undefined ? [] : strings(scope, 'excluded_file_name');
 
 	const anchors = onlyMessage(config, 'code_anchors');
 	return {
 		retentionRoots,
 		excludedRootDirectories,
 		excludedFileNames,
-		...(anchors ? { codeAnchors: readCodeAnchors(anchors) } : {}),
+		...(anchors === undefined ? {} : { codeAnchors: readCodeAnchors(anchors) }),
 	};
 }
 
@@ -91,6 +91,6 @@ function readCodeAnchors(anchors: TextprotoMessage): CodeAnchorContract {
 
 function required(message: TextprotoMessage, name: string): string {
 	const value = onlyString(message, name);
-	if (!value) throw new ContractError(`${SCHEMA_FILE} declares no code_anchors.${name}`);
+	if (value === undefined || value === '') throw new ContractError(`${SCHEMA_FILE} declares no code_anchors.${name}`);
 	return value;
 }

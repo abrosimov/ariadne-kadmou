@@ -3,7 +3,7 @@ import { type VaultContract, parseContract } from '../src/core/contract.ts';
 import { type TextprotoMessage, parseTextproto } from '../src/core/textproto.ts';
 
 export function vector(name: string): string {
-	return readFileSync(new URL(`./vectors/${name}`, import.meta.url), 'utf8');
+	return readFileSync(new URL(`vectors/${name}`, import.meta.url), 'utf8');
 }
 
 export function vectors(name: string): TextprotoMessage {
@@ -12,6 +12,6 @@ export function vectors(name: string): TextprotoMessage {
 
 export function sourceContract(): VaultContract & { codeAnchors: NonNullable<VaultContract['codeAnchors']> } {
 	const contract = parseContract(vector('source_vault_schema.txtpb'));
-	if (!contract.codeAnchors) throw new Error('the source vault schema declares code_anchors');
+	if (contract.codeAnchors === undefined) throw new Error('the source vault schema declares code_anchors');
 	return { ...contract, codeAnchors: contract.codeAnchors };
 }

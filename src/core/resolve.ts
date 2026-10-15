@@ -15,11 +15,11 @@ export interface Resolution {
 /** What the resolver can see of the authority's vault. */
 export interface VaultView {
 	/** Note files, vault-relative, retention roots included as on disk. */
-	hasFile(path: string): boolean;
+	hasFile: (path: string) => boolean;
 	/** Note files with this basename, vault-relative. */
-	filesNamed(basename: string): readonly string[];
+	filesNamed: (basename: string) => readonly string[];
 	/** Headings of a note file, as Obsidian spells a heading reference. */
-	headings(path: string): readonly string[];
+	headings: (path: string) => readonly string[];
 }
 
 export interface ResolutionContext {
@@ -36,7 +36,7 @@ export function resolveNote(reference: NoteReference, context: ResolutionContext
 		return { outcome: 'not-a-direct-dependency' };
 	}
 	const vault = context.vault(authority);
-	if (!vault) return { outcome: 'missing' };
+	if (vault === undefined) return { outcome: 'missing' };
 
 	const withFragment = (outcome: ResolutionOutcome, file: string): Resolution =>
 		fragment === undefined || vault.headings(file).includes(fragment)
@@ -55,14 +55,17 @@ export function resolveNote(reference: NoteReference, context: ResolutionContext
 }
 
 /** A VaultView over a plain list of files, for tests and for snapshots. */
-export function vaultFromFiles(files: Iterable<string>, headings: (path: string) => readonly string[] = () => []): VaultView {
+export function vaultFromFiles(
+	files: Iterable<string>,
+	headings: (path: string) => readonly string[] = () => [],
+): VaultView {
 	const all = new Set(files);
 	const byName = new Map<string, string[]>();
 	for (const file of all) {
 		const name = file.slice(file.lastIndexOf('/') + 1);
 		const list = byName.get(name);
-		if (list) list.push(file);
-		else byName.set(name, [file]);
+		if (list === undefined) byName.set(name, [file]);
+		else list.push(file);
 	}
 	return {
 		hasFile: (path) => all.has(path),

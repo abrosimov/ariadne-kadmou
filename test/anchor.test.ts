@@ -16,7 +16,7 @@ for (const vector of cases) {
 	const valid = (vector.fields.get('valid') ?? [false])[0] === true;
 	void test(`anchor: ${line}`, () => {
 		const parsed = parseAnchorLine(line, contract);
-		assert.ok(parsed, 'the line carries the marker');
+		assert.ok(parsed !== undefined, 'the line carries the marker');
 		assert.equal(parsed.ok, valid, parsed.ok ? 'parsed' : parsed.reason);
 		if (!parsed.ok) return;
 		assert.equal(parsed.value.slug, onlyString(vector, 'slug'));

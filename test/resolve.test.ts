@@ -25,7 +25,7 @@ for (const [index, vector] of cases.entries()) {
 	const name = (vector.fields.get('expected') ?? [])[0];
 	const expected = typeof name === 'string' ? OUTCOMES[name] : undefined;
 	void test(`resolution ${index + 1}: ${reference} is ${expected}`, () => {
-		assert.ok(expected, 'the vector names a known outcome');
+		assert.ok(expected !== undefined, 'the vector names a known outcome');
 		const parsed = parseReference(reference, contract);
 		assert.ok(parsed.ok && parsed.value.kind === 'note');
 		const headings = strings(vector, 'heading');

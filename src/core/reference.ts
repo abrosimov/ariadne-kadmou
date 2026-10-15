@@ -41,19 +41,19 @@ export function parseReference(uri: string, contract: GrammarContract): ParseRes
 	if (/[\s?]/u.test(rest)) return fail('a reference contains no whitespace and no query');
 
 	const slash = rest.indexOf('/');
-	if (slash < 0) return fail('the authority is followed by "/"');
+	if (slash === -1) return fail('the authority is followed by "/"');
 	const authority = rest.slice(0, slash);
 	if (authority === '') return fail('the authority is required');
 	if (authority.includes('#')) return fail('the authority is followed by "/"');
 
 	const afterAuthority = rest.slice(slash + 1);
 	const hash = afterAuthority.indexOf('#');
-	const rawPath = hash < 0 ? afterAuthority : afterAuthority.slice(0, hash);
-	const rawFragment = hash < 0 ? undefined : afterAuthority.slice(hash + 1);
+	const rawPath = hash === -1 ? afterAuthority : afterAuthority.slice(0, hash);
+	const rawFragment = hash === -1 ? undefined : afterAuthority.slice(hash + 1);
 
 	if (rawPath === '') {
 		if (rawFragment === undefined) return fail('a reference names a note path or an anchor slug');
-		if (!contract.codeAnchors) return fail('the vault schema declares no config.code_anchors');
+		if (contract.codeAnchors === undefined) return fail('the vault schema declares no config.code_anchors');
 		if (!contract.codeAnchors.slugPattern.test(rawFragment)) {
 			return fail(`"${rawFragment}" does not match the declared slug pattern`);
 		}
@@ -63,7 +63,7 @@ export function parseReference(uri: string, contract: GrammarContract): ParseRes
 	const path = decode(rawPath);
 	if (path === undefined) return fail('the path is not validly percent-encoded');
 	const segments = path.split('/');
-	if (segments.some((segment) => segment === '' || segment === '.' || segment === '..')) {
+	if (segments.some((segment) => ['', '.', '..'].includes(segment))) {
 		return fail('the path is relative to the vault root, without empty, "." or ".." segments');
 	}
 	if (!path.endsWith('.md')) return fail('a note path carries the .md extension');

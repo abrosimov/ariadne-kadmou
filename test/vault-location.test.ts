@@ -4,8 +4,8 @@ import { type MarkerReader, locateVault } from '../src/core/vault-location.ts';
 
 function folder(files: Record<string, string>, folders: string[] = []): MarkerReader {
 	return {
-		read: (path) => Promise.resolve(files[path]),
-		isFolder: (path) => Promise.resolve(folders.includes(path)),
+		read: async (path) => await Promise.resolve(files[path]),
+		isFolder: async (path) => await Promise.resolve(folders.includes(path)),
 	};
 }
 

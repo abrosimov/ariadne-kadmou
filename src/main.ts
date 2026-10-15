@@ -5,7 +5,7 @@ export default class AriadnePlugin extends Plugin {
 	kadmos: KadmosVault = { kind: 'none' };
 	private statusEl!: HTMLElement;
 
-	onload() {
+	override onload(): void {
 		this.statusEl = this.addStatusBarItem();
 		this.addCommand({
 			id: 'reload-kadmos-vault',

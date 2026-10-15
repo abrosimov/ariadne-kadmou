@@ -40,9 +40,16 @@ Node.js 22.18 or later, for the type stripping the tests run on; npm, esbuild.
 npm install
 npm run dev      # watch build of src/main.ts into main.js
 npm run build    # production build
-npm run lint
+npm run format   # Prettier
+npm run typecheck
+npm run lint     # fails on any warning
 npm test         # node:test over test/, including the kadmos conformance vectors
 ```
+
+CI runs `format:check`, `typecheck`, `lint`, `test` and `build`; any finding fails it.
+Lint is typescript-eslint `strictTypeChecked` and `stylisticTypeChecked`, unicorn, the
+Obsidian rules and a set of stricter rules on top, with no rule about comments or layout:
+layout belongs to Prettier. Every dev dependency is pinned to an exact version.
 
 `src/core/` is free of Obsidian: the `kadmos://` grammar, the anchor declaration, the
 resolver, the vault markers and the reader of the root schema. The vectors under

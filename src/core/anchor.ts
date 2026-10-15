@@ -28,16 +28,17 @@ export function parseAnchorLine(
 ): ParseResult<AnchorDeclaration> | undefined {
 	const { marker, slugPattern, relations } = contract.codeAnchors;
 	const at = line.indexOf(marker);
-	if (at < 0) return undefined;
+	if (at === -1) return undefined;
 
 	if (!COMMENT_PREFIX.test(line.slice(0, at))) {
 		return fail('only the comment syntax of the file precedes the marker');
 	}
 	const rest = line.slice(at + marker.length);
 	const match = /^\[([^\]\s]*)\](.*)$/u.exec(rest);
-	if (!match) return fail(`the marker is followed by "[<slug>|<relation>|<reference>]" without whitespace`);
+	if (match === null) return fail(`the marker is followed by "[<slug>|<relation>|<reference>]" without whitespace`);
 	const [, inner = '', tail = ''] = match;
-	if (tail !== '' && !/^\s/u.test(tail)) return fail('the message is separated from the closing bracket by whitespace');
+	if (tail !== '' && !/^\s/u.test(tail))
+		return fail('the message is separated from the closing bracket by whitespace');
 
 	const fields = inner.split('|');
 	if (fields.length !== 3) return fail('the brackets hold exactly three fields');

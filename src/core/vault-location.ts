@@ -9,8 +9,8 @@ export const ROOT_MARKER = '.vault-root';
 
 export interface MarkerReader {
 	/** File contents, or undefined when no file is at the path. */
-	read(path: string): Promise<string | undefined>;
-	isFolder(path: string): Promise<boolean>;
+	read: (path: string) => Promise<string | undefined>;
+	isFolder: (path: string) => Promise<boolean>;
 }
 
 export type VaultLocation =
