@@ -39,6 +39,17 @@ describe('kadmos:// navigation', () => {
 		await browser.reloadObsidian({ vault: 'test/e2e/vaults/navigation' });
 		// Nothing a test clicks may leave the app as an external link.
 		await captureWindowOpen();
+		// Every navigation the plugin starts, to tell one click from two.
+		await browser.executeObsidian(({ app }) => {
+			const navigations: string[] = [];
+			Object.assign(window, { navigations });
+			const workspace = app.workspace;
+			const openLinkText = workspace.openLinkText.bind(workspace);
+			workspace.openLinkText = async (target, ...rest) => {
+				navigations.push(target);
+				await openLinkText(target, ...rest);
+			};
+		});
 	});
 
 	afterEach(async () => {
@@ -65,10 +76,14 @@ describe('kadmos:// navigation', () => {
 		] as const) {
 			it(`follows "${text}" to ${target}`, async () => {
 				await open(SOURCE, 'reading');
+				const { length: before } = await recorded('navigations');
 				await clickLink('.markdown-reading-view', text);
 				await browser.waitUntil(async () => (await activeFile()) === target, {
 					timeoutMsg: `"${text}" did not open ${target}`,
 				});
+				await browser.pause(300);
+				const navigations = await recorded('navigations');
+				expect(navigations.length - before).toBe(1);
 			});
 		}
 

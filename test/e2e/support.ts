@@ -20,9 +20,27 @@ export async function open(path: string, mode: Mode): Promise<void> {
 		path,
 		mode,
 	);
-	await browser.waitUntil(async () => (await activeFile()) === path, { timeoutMsg: `${path} did not open` });
+	try {
+		await browser.waitUntil(async () => (await activeFile()) === path);
+	} catch {
+		throw new Error(`${path} did not open; leaves: ${await leaves()}`);
+	}
 	const container = mode === 'reading' ? '.markdown-reading-view' : '.markdown-source-view';
 	await $(`${ACTIVE} ${container} [data-kadmos-status]`).waitForExist();
+}
+
+/** Every leaf with its view, file and whether it is active, for a failure to report. */
+async function leaves(): Promise<string> {
+	return await browser.executeObsidian(({ app }) => {
+		const found: string[] = [];
+		app.workspace.iterateAllLeaves((leaf) => {
+			const state = leaf.getViewState();
+			const active = leaf === app.workspace.getMostRecentLeaf() ? ' (most recent)' : '';
+			const file = state.state?.['file'];
+			found.push(`${state.type}:${typeof file === 'string' ? file : ''}${active}`);
+		});
+		return `${found.join(', ')}; active file ${app.workspace.getActiveFile()?.path ?? 'none'}`;
+	});
 }
 
 /** The marked link with this text in `container` of the active leaf, once it is there. */
