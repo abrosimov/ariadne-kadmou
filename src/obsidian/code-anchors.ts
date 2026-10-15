@@ -1,19 +1,16 @@
-// Scans the repository of the kadmos vault for code anchors. The code lies
-// outside what Obsidian indexes, so this reads the file system directly and
-// works on the desktop only.
+// The code anchors of the kadmos vault's repository. The code lies outside
+// what Obsidian indexes, so the scan reads the file system and runs on the
+// desktop only.
 
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { type App, FileSystemAdapter } from 'obsidian';
 import { type AnchorIndex, type AnchorSite, codeLink, indexAnchors } from '../core/anchor-index.ts';
 import type { VaultContract } from '../core/contract.ts';
 import { repositoryIsParent } from '../core/repository.ts';
+import { filesMentioning } from '../core/source-scan.ts';
 import { ROOT_MARKER } from '../core/vault-location.ts';
-
-/** Files larger than this are not source a person annotates. */
-const MAX_FILE_BYTES = 1024 * 1024;
-const SKIPPED_DIRECTORIES = new Set(['node_modules']);
 
 export interface CodeAnchors {
 	/** Absolute path of the repository root. */
@@ -21,54 +18,27 @@ export interface CodeAnchors {
 	readonly index: AnchorIndex;
 }
 
-/** The anchors of the repository, or undefined when the schema declares no anchor contract or no file system is at hand. */
+/** The anchors of the repository, or why there are none to show. */
 export async function scanCodeAnchors(
 	app: App,
 	vaultPath: string,
 	contract: VaultContract,
-): Promise<CodeAnchors | undefined> {
+): Promise<CodeAnchors | string> {
 	const { codeAnchors } = contract;
 	const adapter = app.vault.adapter;
-	if (codeAnchors === undefined || !(adapter instanceof FileSystemAdapter)) return undefined;
+	if (codeAnchors === undefined) return 'Code anchors are not checked: the schema declares none';
+	if (!(adapter instanceof FileSystemAdapter)) return 'Code anchors are checked on the desktop only';
 	const opened = adapter.getBasePath();
 	const parentMarker = await readFile(path.join(path.dirname(opened), ROOT_MARKER), 'utf8').catch(() => undefined);
 	const root = repositoryIsParent(vaultPath, path.basename(opened), parentMarker) ? path.dirname(opened) : opened;
 	const vault = path.join(opened, vaultPath);
-	const files = await sourceFiles(root, vault);
-	return {
-		root,
-		index: indexAnchors(files, { ...contract, codeAnchors }),
-	};
+	// A vault at the repository root leaves no file outside it to anchor.
+	const files = root === vault ? [] : await filesMentioning(root, vault, codeAnchors.marker);
+	return { root, index: indexAnchors(files, { ...contract, codeAnchors }) };
 }
 
 /** Opens the code at an anchor through the address the template builds. */
 export function openCode(anchors: CodeAnchors, site: AnchorSite, template: string): void {
 	const file = path.join(anchors.root, ...site.file.split('/'));
 	window.open(codeLink(template, file, pathToFileURL(file).href, site.line));
-}
-
-// Text files below the root, outside the vault, dot-directories and dependency trees.
-async function sourceFiles(root: string, vault: string): Promise<{ path: string; text: string }[]> {
-	const found: { path: string; text: string }[] = [];
-	const walk = async (directory: string): Promise<void> => {
-		const entries = await readdir(directory, { withFileTypes: true });
-		await Promise.all(
-			entries.map(async (entry) => {
-				const full = path.join(directory, entry.name);
-				if (entry.name.startsWith('.') || full === vault) return;
-				if (entry.isDirectory()) {
-					if (!SKIPPED_DIRECTORIES.has(entry.name)) await walk(full);
-					return;
-				}
-				if (!entry.isFile()) return;
-				const { size } = await stat(full);
-				if (size > MAX_FILE_BYTES) return;
-				const text = await readFile(full, 'utf8');
-				if (!text.includes('\0'))
-					found.push({ path: path.relative(root, full).split(path.sep).join('/'), text });
-			}),
-		);
-	};
-	await walk(root);
-	return found;
 }

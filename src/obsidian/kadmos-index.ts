@@ -15,8 +15,12 @@ export class KadmosIndex {
 	/** The kadmos vault folder relative to the Obsidian vault root; '' for the root. */
 	readonly root: string;
 	readonly contract: VaultContract;
-	/** The repository's code anchors once scanned; undefined when they cannot be. */
-	anchors: CodeAnchors | undefined;
+	/** The repository's code anchors once scanned, or why there are none to show. */
+	scan: CodeAnchors | string = 'Code anchors are not scanned yet';
+
+	get anchors(): CodeAnchors | undefined {
+		return typeof this.scan === 'string' ? undefined : this.scan;
+	}
 
 	constructor(app: App, root: string, contract: VaultContract) {
 		this.app = app;

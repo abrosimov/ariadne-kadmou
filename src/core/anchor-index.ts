@@ -73,11 +73,9 @@ export function pairingProblems(index: AnchorIndex, path: string, listed: readon
 
 /**
  * The address a code location opens at: `{url}` is the file URL, `{path}` the
- * encoded absolute path, `{line}` the line number.
+ * absolute path with `/` separators, escaped for a URL path, `{line}` the line.
  */
 export function codeLink(template: string, absolutePath: string, fileUrl: string, line: number): string {
-	return template
-		.replaceAll('{url}', fileUrl)
-		.replaceAll('{path}', encodeURI(absolutePath))
-		.replaceAll('{line}', String(line));
+	const path = encodeURI(absolutePath.replaceAll('\\', '/')).replaceAll('#', '%23').replaceAll('?', '%3F');
+	return template.replaceAll('{url}', fileUrl).replaceAll('{path}', path).replaceAll('{line}', String(line));
 }

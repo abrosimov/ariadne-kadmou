@@ -86,7 +86,8 @@ export function formatReference(reference: KadmosReference): string {
 	return `${SCHEME}${reference.authority}/${path}${fragment}`;
 }
 
-function decode(text: string): string | undefined {
+/** Percent-decodes, or undefined when the escapes are malformed. */
+export function decode(text: string): string | undefined {
 	try {
 		return decodeURIComponent(text);
 	} catch {

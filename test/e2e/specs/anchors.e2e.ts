@@ -85,6 +85,16 @@ describe('code anchors', () => {
 		});
 	});
 
+	describe('with a vault that is its own repository', () => {
+		it('finds no anchors in its own notes and data', async () => {
+			await browser.reloadObsidian({ vault: 'test/e2e/vaults/root-vault-mentions' });
+			await browser.waitUntil(async () => (await anchorCount()) === '0');
+			expect(await $(STATUS).getAttribute('aria-label')).toBe(
+				'Kadmos vault located by its markers; 0 code anchors',
+			);
+		});
+	});
+
 	describe('with Obsidian opened at the vault the parent repository declares', () => {
 		it('scans the parent repository', async () => {
 			const repository = path.join(await mkdtemp(path.join(os.tmpdir(), 'ariadne-')), 'repo');

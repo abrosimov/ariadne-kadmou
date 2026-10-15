@@ -21,7 +21,8 @@ export default class AriadnePlugin extends Plugin {
 	private readonly editorLinks = new EditorLinks(() => this.index);
 	// Rendered before the first load finished; marked once it has. Undefined after it.
 	private pending: HTMLElement[] | undefined = [];
-	private lastScan = 0;
+	// Scans in flight and their order: only the latest one's result is kept.
+	private readonly scans = { started: 0, running: 0, finishedAt: 0 };
 	private statusEl!: HTMLElement;
 
 	override async onload(): Promise<void> {
@@ -56,14 +57,24 @@ export default class AriadnePlugin extends Plugin {
 
 		const follower = new LinkFollower(this.app, () => this.index, open);
 		this.registerHoverLinkSource(HOVER_SOURCE, { display: 'Ariadne kadmou', defaultMod: true });
-		this.registerDomEvent(activeDocument, 'click', (event) => follower.click(event), { capture: true });
-		this.registerDomEvent(activeDocument, 'mouseover', (event) => {
-			follower.hover(event);
-		});
-		// Code changes outside Obsidian; a return to the window picks them up.
-		this.registerDomEvent(activeWindow, 'focus', () => {
-			if (Date.now() - this.lastScan > RESCAN_INTERVAL_MS) void this.scan();
-		});
+		// Every window, the main one and each pop-out, follows links and rescans on focus.
+		const listen = (doc: Document, win: Window): void => {
+			this.registerDomEvent(doc, 'click', (event) => follower.click(event), { capture: true });
+			this.registerDomEvent(doc, 'mouseover', (event) => {
+				follower.hover(event);
+			});
+			// Code changes outside Obsidian; a return to the window picks them up.
+			this.registerDomEvent(win, 'focus', () => {
+				const { running, finishedAt } = this.scans;
+				if (running === 0 && Date.now() - finishedAt > RESCAN_INTERVAL_MS) void this.scan();
+			});
+		};
+		listen(activeDocument, activeWindow);
+		this.registerEvent(
+			this.app.workspace.on('window-open', ({ doc, win }) => {
+				listen(doc, win);
+			}),
+		);
 		this.registerMarkdownPostProcessor((element) => {
 			if (this.index === undefined) this.pending?.push(element);
 			else decorateAll(element, this.index);
@@ -71,17 +82,18 @@ export default class AriadnePlugin extends Plugin {
 		this.registerEditorExtension(this.editorLinks.extension);
 		this.registerEditorSuggest(new ReferenceSuggest(this.app, () => this.index));
 
-		const changed = debounce(() => {
+		// A new, removed or moved note changes the index; an edited one only what its headings answer.
+		const reindex = debounce(() => {
 			this.index?.invalidate();
 			this.refresh();
 		}, 300);
-		const onFile = (file: TAbstractFile): void => {
-			if (file.path.endsWith('.md')) changed();
-		};
-		this.registerEvent(this.app.vault.on('create', onFile));
-		this.registerEvent(this.app.vault.on('delete', onFile));
-		this.registerEvent(this.app.vault.on('rename', onFile));
-		this.registerEvent(this.app.metadataCache.on('changed', onFile));
+		const remark = debounce(() => {
+			this.refresh();
+		}, 300);
+		this.registerEvent(this.app.vault.on('create', onNote(reindex)));
+		this.registerEvent(this.app.vault.on('delete', onNote(reindex)));
+		this.registerEvent(this.app.vault.on('rename', onNote(reindex)));
+		this.registerEvent(this.app.metadataCache.on('changed', onNote(remark)));
 
 		this.app.workspace.onLayoutReady(() => void this.reload());
 	}
@@ -95,13 +107,24 @@ export default class AriadnePlugin extends Plugin {
 		const index = this.index;
 		if (index !== undefined) for (const element of this.pending ?? []) decorateAll(element, index);
 		this.pending = undefined;
+		this.renderStatus();
+		this.refresh();
 		await this.scan();
 	}
 
 	private async scan(): Promise<void> {
-		this.lastScan = Date.now();
 		const index = this.index;
-		if (index !== undefined) index.anchors = await scanCodeAnchors(this.app, index.root, index.contract);
+		if (index === undefined) return;
+		const run = ++this.scans.started;
+		this.scans.running++;
+		const result = await scanCodeAnchors(this.app, index.root, index.contract).catch(
+			(error: unknown) => `Code anchors could not be scanned: ${String(error)}`,
+		);
+		this.scans.running--;
+		// A later scan, or another vault, has superseded this one.
+		if (run !== this.scans.started || index !== this.index) return;
+		this.scans.finishedAt = Date.now();
+		index.scan = result;
 		this.renderStatus();
 		this.refresh();
 	}
@@ -141,4 +164,10 @@ function decorateAll(container: HTMLElement, index: KadmosIndex): void {
 	for (const anchor of container.querySelectorAll<HTMLAnchorElement>(REFERENCE_ANCHORS)) {
 		decorate(anchor, anchor.getAttribute('href') ?? '', index);
 	}
+}
+
+function onNote(run: () => void): (file: TAbstractFile) => void {
+	return (file) => {
+		if (file.path.endsWith('.md')) run();
+	};
 }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findReferenceLinks, referencePrefixAt } from '../src/core/link-scan.ts';
+import { findReferenceLinks, referenceAt } from '../src/core/link-scan.ts';
 
 void test('a Markdown link to a reference is found with its text and target', () => {
 	const text = 'See [the target](kadmos://oikos/a/b.md#Section%20A) here.';
@@ -37,7 +37,23 @@ void test('links to other schemes, bare URIs and escaped brackets are not refere
 
 void test('the text after the scheme is the query while a reference is typed', () => {
 	const line = 'see [x](kadmos://oikos/sta';
-	assert.deepEqual(referencePrefixAt(line, line.length), { start: 8, query: 'oikos/sta' });
-	assert.equal(referencePrefixAt('[x](kadmos://oikos/a.md) more', 29), undefined);
-	assert.equal(referencePrefixAt('nothing here', 5), undefined);
+	assert.deepEqual(referenceAt(line, line.length), { start: 8, end: line.length, query: 'oikos/sta' });
+	// In the middle of a reference the whole reference is replaced, not only what precedes the cursor.
+	assert.deepEqual(referenceAt('[x](kadmos://oikos/standards/a.md) more', 22), {
+		start: 4,
+		end: 33,
+		query: 'oikos/sta',
+	});
+	assert.equal(referenceAt('[x](kadmos://oikos/a.md) more', 29), undefined);
+	assert.equal(referenceAt('nothing here', 5), undefined);
+});
+
+void test('only an odd run of backslashes escapes the bracket', () => {
+	for (const [backslashes, links] of [
+		[1, 0],
+		[2, 1],
+		[3, 0],
+	] as const) {
+		assert.equal(findReferenceLinks(`${'\\'.repeat(backslashes)}[a](kadmos://oikos/a.md)`).length, links);
+	}
 });

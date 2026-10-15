@@ -19,34 +19,48 @@ export interface ReferenceLink {
 // [text](kadmos://...) or [text](<kadmos://...>), with an optional title.
 const LINK =
 	/\[((?:\\.|[^\\\]\n])*)\]\(\s*(<kadmos:\/\/[^>\n]*>|kadmos:\/\/[^\s)]*)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)/gu;
+// What ends a reference being typed.
+const BOUNDARY = /[\s()<>[\]]/u;
 
 export function findReferenceLinks(text: string): ReferenceLink[] {
 	const links: ReferenceLink[] = [];
 	for (const match of text.matchAll(LINK)) {
 		const [whole, label = '', target = ''] = match;
 		const from = match.index;
-		// An escaped bracket does not open a link.
-		if (from > 0 && text.charAt(from - 1) === '\\') continue;
+		// A bracket after an odd run of backslashes is escaped and opens no link.
+		const backslashes = /\\*$/u.exec(text.slice(0, from))?.[0].length ?? 0;
+		if (backslashes % 2 === 1) continue;
 		const textFrom = from + 1;
-		const textTo = textFrom + label.length;
 		const targetFrom = from + whole.indexOf(target, label.length + 2);
 		const angled = target.startsWith('<');
 		const uri = angled ? target.slice(1, -1) : target;
 		const uriFrom = angled ? targetFrom + 1 : targetFrom;
-		links.push({ from, to: from + whole.length, textFrom, textTo, uriFrom, uriTo: uriFrom + uri.length, uri });
+		links.push({
+			from,
+			to: from + whole.length,
+			textFrom,
+			textTo: textFrom + label.length,
+			uriFrom,
+			uriTo: uriFrom + uri.length,
+			uri,
+		});
 	}
 	return links;
 }
 
-/** The text after `kadmos://` when the cursor sits inside a reference being typed, else undefined. */
-export function referencePrefixAt(
+/**
+ * The reference the cursor sits in while it is typed: where it starts and
+ * ends on the line, and the text between `kadmos://` and the cursor.
+ */
+export function referenceAt(
 	line: string,
 	cursor: number,
-): { readonly start: number; readonly query: string } | undefined {
+): { readonly start: number; readonly end: number; readonly query: string } | undefined {
 	const before = line.slice(0, cursor);
 	const start = before.lastIndexOf(SCHEME);
 	if (start === -1) return undefined;
 	const query = before.slice(start + SCHEME.length);
-	if (/[\s()<>[\]]/u.test(query)) return undefined;
-	return { start, query };
+	if (BOUNDARY.test(query)) return undefined;
+	const rest = line.slice(cursor).search(BOUNDARY);
+	return { start, end: rest === -1 ? line.length : cursor + rest, query };
 }

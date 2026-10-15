@@ -8,11 +8,11 @@ import type { KadmosIndex } from './kadmos-index.ts';
 
 export type ReferenceState =
 	| { readonly kind: 'invalid'; readonly reason: string }
-	/** `sites` is undefined when the repository was not scanned for anchors. */
+	/** `sites` says why the anchors are not at hand, when they are not. */
 	| {
 			readonly kind: 'anchor';
 			readonly reference: AnchorReference;
-			readonly sites: readonly AnchorSite[] | undefined;
+			readonly sites: readonly AnchorSite[] | string;
 	  }
 	| { readonly kind: 'note'; readonly reference: NoteReference; readonly resolution: Resolution };
 
@@ -33,12 +33,9 @@ export function referenceState(uri: string, index: KadmosIndex): ReferenceState 
 	if (!parsed.ok) return { kind: 'invalid', reason: parsed.reason };
 	const reference = parsed.value;
 	if (reference.kind === 'anchor') {
-		const anchors = index.anchors?.index;
-		return {
-			kind: 'anchor',
-			reference,
-			sites: anchors === undefined ? undefined : (anchors.sites.get(reference.slug) ?? []),
-		};
+		const { scan } = index;
+		const sites = typeof scan === 'string' ? scan : (scan.index.sites.get(reference.slug) ?? []);
+		return { kind: 'anchor', reference, sites };
 	}
 	const resolution = resolveNote(reference, {
 		contract: index.contract,
@@ -65,7 +62,7 @@ export function present(state: ReferenceState): Presentation {
 /** Where following the reference leads, or undefined when it leads nowhere. */
 export function target(state: ReferenceState, index: KadmosIndex): Target | undefined {
 	if (state.kind === 'anchor') {
-		const [site, ...others] = state.sites ?? [];
+		const [site, ...others] = typeof state.sites === 'string' ? [] : state.sites;
 		const usable = state.reference.authority === OIKOS && site !== undefined && others.length === 0;
 		return usable ? { kind: 'code', site } : undefined;
 	}
@@ -79,9 +76,9 @@ export function target(state: ReferenceState, index: KadmosIndex): Target | unde
 	return { kind: 'note', linktext: path + heading };
 }
 
-function presentAnchor(reference: AnchorReference, sites: readonly AnchorSite[] | undefined): Presentation {
+function presentAnchor(reference: AnchorReference, sites: readonly AnchorSite[] | string): Presentation {
 	if (reference.authority !== OIKOS) return foreign(reference.authority);
-	if (sites === undefined) return shown('unchecked', 'Code anchors are not scanned: the schema declares none');
+	if (typeof sites === 'string') return shown('unchecked', sites);
 	const [site] = sites;
 	if (site === undefined) return shown('missing', `Missing: no anchor "${reference.slug}" in this repository`);
 	if (sites.length > 1) {

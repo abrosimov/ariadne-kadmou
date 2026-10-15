@@ -25,12 +25,20 @@ export async function open(path: string, mode: Mode): Promise<void> {
 	await $(`${ACTIVE} ${container} [data-kadmos-status]`).waitForExist();
 }
 
-/** The marked link with this text in the active leaf. */
+/** The marked link with this text in the active leaf, once it is there. */
 export async function link(container: string, text: string): Promise<WebdriverIO.Element> {
-	for (const element of await $$(`${ACTIVE} ${container} [data-kadmos-status]`).getElements()) {
-		if ((await element.getText()) === text) return element;
-	}
-	throw new Error(`no link "${text}" in ${container}`);
+	let found: WebdriverIO.Element | undefined;
+	await browser.waitUntil(
+		async () => {
+			for (const element of await $$(`${ACTIVE} ${container} [data-kadmos-status]`).getElements()) {
+				if ((await element.getText()) === text) found = element;
+			}
+			return found !== undefined;
+		},
+		{ timeoutMsg: `no link "${text}" in ${container}` },
+	);
+	if (found === undefined) throw new Error(`no link "${text}" in ${container}`);
+	return found;
 }
 
 export async function clickLink(container: string, text: string): Promise<void> {
@@ -56,13 +64,19 @@ export async function statuses(selector: string): Promise<Record<string, string>
 	return result;
 }
 
-/** Records every window.open in the page instead of leaving the app; read with `recorded('opened')`. */
+/**
+ * Records every window.open that would leave the app instead of opening it;
+ * read with `recorded('opened')`. Obsidian's own pop-out windows still open.
+ */
 export async function captureWindowOpen(): Promise<void> {
 	await browser.execute(() => {
 		const opened: string[] = [];
+		const original = window.open.bind(window);
 		Object.assign(window, { opened });
-		window.open = (url?: string | URL) => {
-			opened.push(String(url));
+		window.open = (url?: string | URL, ...rest: [string?, string?]) => {
+			const address = String(url ?? '');
+			if (address === '' || address.startsWith('about:')) return original(url, ...rest);
+			opened.push(address);
 			return null;
 		};
 	});

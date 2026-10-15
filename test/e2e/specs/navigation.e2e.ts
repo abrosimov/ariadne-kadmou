@@ -1,4 +1,4 @@
-import { $, browser, expect } from '@wdio/globals';
+import { $, $$, browser, expect } from '@wdio/globals';
 import { ACTIVE, activeFile, captureWindowOpen, clickLink, link, open, recorded, statuses } from '../support.ts';
 
 const SOURCE = 'docs/decisions/source.md';
@@ -13,6 +13,24 @@ const EXPECTED: Record<string, string> = {
 	foreign: 'foreign',
 	anchor: 'missing',
 };
+
+async function renameHeading(from: string, to: string): Promise<void> {
+	await browser.executeObsidian(
+		async ({ app, obsidian }, before, after) => {
+			const file = app.vault.getAbstractFileByPath('docs/standards/target.md');
+			if (file instanceof obsidian.TFile) await app.vault.process(file, (text) => text.replace(before, after));
+		},
+		from,
+		to,
+	);
+}
+
+async function headingLinkIs(status: string): Promise<void> {
+	await browser.waitUntil(async () => {
+		const marks = await statuses(`${ACTIVE} .markdown-reading-view a[data-kadmos-status]`);
+		return marks['heading'] === status;
+	});
+}
 
 describe('kadmos:// navigation', () => {
 	before(async () => {
@@ -109,6 +127,41 @@ describe('kadmos:// navigation', () => {
 				const marks = await statuses(`${ACTIVE} .markdown-reading-view a[data-kadmos-status]`);
 				return marks['missing'] === 'missing';
 			});
+		});
+	});
+
+	describe('when a heading changes', () => {
+		it('marks a link to a renamed heading missing, and resolved once it is back', async () => {
+			await open(SOURCE, 'reading');
+			await renameHeading('## Section A', '## Section B');
+			await headingLinkIs('missing');
+			await renameHeading('## Section B', '## Section A');
+			await headingLinkIs('resolved');
+		});
+	});
+
+	describe('in a pop-out window', () => {
+		it('follows a link', async () => {
+			const main = await browser.getWindowHandle();
+			await browser.executeObsidian(async ({ app, obsidian }, file) => {
+				const target = app.vault.getAbstractFileByPath(file);
+				if (!(target instanceof obsidian.TFile)) throw new Error(`no file ${file}`);
+				await app.workspace.openPopoutLeaf().openFile(target, { state: { mode: 'preview' } });
+			}, SOURCE);
+			let popout = main;
+			await browser.waitUntil(async () => {
+				const handles = await browser.getWindowHandles();
+				popout = handles.find((handle) => handle !== main) ?? main;
+				return popout !== main;
+			});
+			await browser.switchToWindow(popout);
+			try {
+				await clickLink('.markdown-reading-view', 'resolved');
+				await browser.waitUntil(async () => (await activeFile()) === 'docs/standards/target.md');
+			} finally {
+				await browser.closeWindow();
+				await browser.switchToWindow(main);
+			}
 		});
 	});
 

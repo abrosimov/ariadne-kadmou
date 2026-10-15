@@ -14,7 +14,7 @@ const source: CompletionSource = {
 };
 
 void test('the authority is completed first', () => {
-	assert.deepEqual(complete('oi', source), [{ label: 'oikos', reference: 'kadmos://oikos/', complete: false }]);
+	assert.deepEqual(complete('oi', source), [{ label: 'oikos', reference: 'kadmos://oikos/' }]);
 	assert.deepEqual(complete('nomos', source), []);
 });
 
@@ -33,7 +33,7 @@ void test('note paths match anywhere and rank a basename match first', () => {
 
 void test('headings are completed and encoded', () => {
 	assert.deepEqual(complete('oikos/standards/validation.md#hard', source), [
-		{ label: 'Hard checks', reference: 'kadmos://oikos/standards/validation.md#Hard%20checks', complete: true },
+		{ label: 'Hard checks', reference: 'kadmos://oikos/standards/validation.md#Hard%20checks' },
 	]);
 });
 
@@ -42,9 +42,7 @@ void test('an undeclared authority completes nothing', () => {
 });
 
 void test('anchor slugs are completed after the hash', () => {
-	assert.deepEqual(complete('oikos/#put', source), [
-		{ label: 'store-put', reference: 'kadmos://oikos/#store-put', complete: true },
-	]);
+	assert.deepEqual(complete('oikos/#put', source), [{ label: 'store-put', reference: 'kadmos://oikos/#store-put' }]);
 });
 
 void test('a malformed escape is matched as typed', () => {

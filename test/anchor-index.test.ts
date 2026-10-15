@@ -61,4 +61,9 @@ void test('a code link fills the template', () => {
 		'vscode://file//repo/my%20src/a.go:7',
 	);
 	assert.equal(codeLink('{url}', '/a.go', 'file:///a.go', 1), 'file:///a.go');
+	assert.equal(codeLink('x://{path}', '/repo/C#/a?.cs', '', 1), 'x:///repo/C%23/a%3F.cs');
+	assert.equal(
+		codeLink('vscode://file/{path}:{line}', String.raw`C:\repo\a.go`, '', 3),
+		'vscode://file/C:/repo/a.go:3',
+	);
 });

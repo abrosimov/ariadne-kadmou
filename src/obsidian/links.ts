@@ -88,10 +88,15 @@ export class LinkFollower implements HoverParent {
 	}
 }
 
+// A pop-out window's elements are not instances of this window's HTMLElement;
+// Obsidian's instanceOf checks across windows.
+function targetElement(event: MouseEvent): HTMLElement | undefined {
+	const node = event.target as Node | null;
+	return node?.instanceOf(HTMLElement) === true ? node : undefined;
+}
+
 function marked(event: MouseEvent): HTMLElement | undefined {
-	return event.target instanceof HTMLElement
-		? (event.target.closest<HTMLElement>('[data-kadmos-uri]') ?? undefined)
-		: undefined;
+	return targetElement(event)?.closest<HTMLElement>('[data-kadmos-uri]') ?? undefined;
 }
 
 // Reading view follows a link on a click. Live preview does so where the link
@@ -99,7 +104,7 @@ function marked(event: MouseEvent): HTMLElement | undefined {
 // source editor, only a modified click follows, so a click places the cursor.
 function followsOnClick(element: HTMLElement, event: MouseEvent): boolean {
 	if (element.closest('.markdown-source-view') === null) return true;
-	const rendered = event.target instanceof HTMLElement && event.target.closest('.cm-underline') !== null;
+	const rendered = (targetElement(event)?.closest('.cm-underline') ?? null) !== null;
 	if (rendered && element.closest('.markdown-source-view.is-live-preview') !== null) return true;
 	return Keymap.isModEvent(event) !== false;
 }
