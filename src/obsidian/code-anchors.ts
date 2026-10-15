@@ -16,6 +16,8 @@ export interface CodeAnchors {
 	/** Absolute path of the repository root. */
 	readonly root: string;
 	readonly index: AnchorIndex;
+	/** Where the next scan starts from. */
+	readonly cache: SourceCache;
 }
 
 /** The anchors of the repository, or why there are none to show. */
@@ -23,7 +25,7 @@ export async function scanCodeAnchors(
 	app: App,
 	vaultPath: string,
 	contract: VaultContract,
-	cache: SourceCache,
+	previous: SourceCache | undefined,
 ): Promise<CodeAnchors | string> {
 	const { codeAnchors } = contract;
 	const adapter = app.vault.adapter;
@@ -34,8 +36,11 @@ export async function scanCodeAnchors(
 	const root = repositoryIsParent(vaultPath, path.basename(opened), parentMarker) ? path.dirname(opened) : opened;
 	const vault = path.join(opened, vaultPath);
 	// A vault at the repository root leaves no file outside it to anchor.
-	const files = root === vault ? [] : await filesMentioning(root, vault, codeAnchors.marker, cache);
-	return { root, index: indexAnchors(files, { ...contract, codeAnchors }) };
+	const { files, cache } =
+		root === vault
+			? { files: [], cache: new Map() }
+			: await filesMentioning(root, vault, codeAnchors.marker, previous);
+	return { root, index: indexAnchors(files, { ...contract, codeAnchors }), cache };
 }
 
 /** Opens the code at an anchor through the address the template builds. */

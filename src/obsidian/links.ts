@@ -10,22 +10,27 @@ import { present, referenceState, target } from './references.ts';
 export const HOVER_SOURCE = 'ariadne-kadmou';
 const URI_ATTRIBUTE = 'data-kadmos-uri';
 const STATUS_ATTRIBUTE = 'data-kadmos-status';
+const LINK_CLASS = 'ariadne-kadmou-link';
 
 /** The attributes that mark a kadmos:// link and present its status. */
 export function attributes(uri: string, index: KadmosIndex): Record<string, string> {
 	const { status, description } = present(referenceState(uri, index));
 	return {
-		class: `ariadne-kadmou-link is-${status}`,
+		class: `${LINK_CLASS} is-${status}`,
 		[URI_ATTRIBUTE]: uri,
 		[STATUS_ATTRIBUTE]: status,
 		'aria-label': description,
 	};
 }
 
-/** Marks a rendered link, replacing an earlier mark. */
-export function decorate(element: HTMLElement, uri: string, index: KadmosIndex): void {
+/** Marks a rendered link, replacing an earlier mark; without an index, removes the mark. */
+export function decorate(element: HTMLElement, uri: string, index: KadmosIndex | undefined): void {
 	const previous = element.getAttribute(STATUS_ATTRIBUTE);
-	if (previous !== null) element.removeClass(`is-${previous}`);
+	if (previous !== null) element.removeClasses([LINK_CLASS, `is-${previous}`]);
+	if (index === undefined) {
+		for (const name of [URI_ATTRIBUTE, STATUS_ATTRIBUTE, 'aria-label']) element.removeAttribute(name);
+		return;
+	}
 	const { class: classes = '', ...rest } = attributes(uri, index);
 	element.addClasses(classes.split(' '));
 	for (const [name, value] of Object.entries(rest)) element.setAttr(name, value);

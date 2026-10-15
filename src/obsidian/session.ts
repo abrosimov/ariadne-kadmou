@@ -3,7 +3,6 @@
 
 import type { App } from 'obsidian';
 import { Latest } from '../core/latest.ts';
-import type { SourceCache } from '../core/source-scan.ts';
 import { scanCodeAnchors } from './code-anchors.ts';
 import { EditorLinks } from './editor.ts';
 import { KadmosIndex } from './kadmos-index.ts';
@@ -24,8 +23,8 @@ export class Session {
 	// Sections rendered before the first load finished, marked once it has: a
 	// later refresh reaches only what is attached by then. Undefined after it.
 	private pending: HTMLElement[] | undefined = [];
+	private readonly loads = new Latest();
 	private readonly scans = new Latest();
-	private cache: SourceCache = new Map();
 	private scannedAt = 0;
 
 	constructor(app: App, status: HTMLElement) {
@@ -40,13 +39,18 @@ export class Session {
 	}
 
 	async reload(): Promise<void> {
-		this.kadmos = await loadKadmosVault(this.app).catch((error: unknown) => ({
-			kind: 'error' as const,
-			reason: `The kadmos vault could not be read: ${String(error)}`,
-		}));
-		const { kadmos } = this;
+		const loaded = await this.loads.run(
+			async () =>
+				await loadKadmosVault(this.app).catch((error: unknown) => ({
+					kind: 'error' as const,
+					reason: `The kadmos vault could not be read: ${String(error)}`,
+				})),
+		);
+		// A later reload, or the plugin's unload, has superseded this one.
+		if (loaded === undefined) return;
+		const kadmos = loaded.value;
+		this.kadmos = kadmos;
 		this.index = kadmos.kind === 'vault' ? new KadmosIndex(this.app, kadmos.path, kadmos.contract) : undefined;
-		this.cache = new Map();
 		const index = this.index;
 		if (index !== undefined) for (const element of this.pending ?? []) decorateAll(element, index);
 		this.pending = undefined;
@@ -59,7 +63,7 @@ export class Session {
 		if (index === undefined) return;
 		const result = await this.scans.run(
 			async () =>
-				await scanCodeAnchors(this.app, index.root, index.contract, this.cache).catch(
+				await scanCodeAnchors(this.app, index.root, index.contract, index.anchors?.cache).catch(
 					(error: unknown) => `Code anchors could not be scanned: ${String(error)}`,
 				),
 		);
@@ -88,14 +92,13 @@ export class Session {
 	 */
 	refresh(): void {
 		this.editorLinks.refresh();
-		const index = this.index;
-		if (index === undefined) return;
 		this.app.workspace.iterateAllLeaves((leaf) => {
-			decorateAll(leaf.view.containerEl, index);
+			decorateAll(leaf.view.containerEl, this.index);
 		});
 	}
 
 	close(): void {
+		this.loads.cancel();
 		this.scans.cancel();
 	}
 
@@ -105,7 +108,7 @@ export class Session {
 	}
 }
 
-function decorateAll(container: HTMLElement, index: KadmosIndex): void {
+function decorateAll(container: HTMLElement, index: KadmosIndex | undefined): void {
 	for (const anchor of container.querySelectorAll<HTMLAnchorElement>(REFERENCE_ANCHORS)) {
 		decorate(anchor, anchor.getAttribute('href') ?? '', index);
 	}

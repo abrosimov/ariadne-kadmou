@@ -89,6 +89,10 @@ export default class AriadnePlugin extends Plugin {
 		this.registerEvent(this.app.vault.on('delete', onNote(reindex)));
 		this.registerEvent(this.app.vault.on('rename', onNote(reindex)));
 		this.registerEvent(this.app.metadataCache.on('changed', onNote(refresh)));
+		this.register(() => {
+			reindex.cancel();
+			refresh.cancel();
+		});
 
 		this.app.workspace.onLayoutReady(() => void session.reload());
 	}

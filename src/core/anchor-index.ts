@@ -33,7 +33,7 @@ export function indexAnchors(
 	const problems: AnchorProblem[] = [];
 	for (const { path, text } of files) {
 		if (!text.includes(contract.codeAnchors.marker)) continue;
-		for (const [number, line] of text.split('\n').entries()) {
+		for (const [number, line] of text.split(/\r?\n/u).entries()) {
 			const parsed = parseAnchorLine(line, contract);
 			if (parsed === undefined) continue;
 			if (!parsed.ok) {

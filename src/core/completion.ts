@@ -11,6 +11,8 @@ export interface CompletionSource {
 	anchors: (authority: string) => readonly string[];
 	/** Authorities that may be referenced: oikos and the direct dependencies. */
 	readonly authorities: readonly string[];
+	/** Whether a reference is well formed; completion offers no other. */
+	accepts: (reference: string) => boolean;
 }
 
 export interface Completion {
@@ -23,6 +25,10 @@ export interface Completion {
 const LIMIT = 50;
 
 export function complete(query: string, source: CompletionSource): Completion[] {
+	return candidates(query, source).filter((completion) => source.accepts(completion.reference));
+}
+
+function candidates(query: string, source: CompletionSource): Completion[] {
 	const slash = query.indexOf('/');
 	if (slash === -1) {
 		return source.authorities

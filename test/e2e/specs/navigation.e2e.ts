@@ -238,4 +238,18 @@ describe('kadmos:// navigation', () => {
 			expect(line).toBe('[x](kadmos://oikos/standards/target.md)');
 		});
 	});
+	describe('when the vault goes away', () => {
+		it('removes the marks from rendered links', async () => {
+			await open(SOURCE, 'reading');
+			await browser.executeObsidian(async ({ app }) => {
+				await app.vault.adapter.remove('.vault-root');
+			});
+			await browser.executeObsidianCommand('ariadne-kadmou:reload-kadmos-vault');
+			await browser.waitUntil(async () => {
+				const marked = await $$(`${ACTIVE} .markdown-reading-view a[data-kadmos-status]`).getElements();
+				return marked.length === 0;
+			});
+			expect(await $(`${ACTIVE} .markdown-reading-view a.ariadne-kadmou-link`).isExisting()).toBe(false);
+		});
+	});
 });

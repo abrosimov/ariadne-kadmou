@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { complete, type CompletionSource } from '../src/core/completion.ts';
+import { parseReference } from '../src/core/reference.ts';
+import { sourceContract } from './support.ts';
 
 const source: CompletionSource = {
 	authorities: ['oikos'],
@@ -9,8 +11,10 @@ const source: CompletionSource = {
 		'standards/note-lifecycle.md',
 		'standards/validation.md',
 	],
-	headings: (_authority, path) => (path === 'standards/validation.md' ? ['Validation', 'Hard checks'] : []),
+	headings: (_authority, path) =>
+		path === 'standards/validation.md' ? ['Validation', 'Hard checks', 'C# bindings', 'L12'] : [],
 	anchors: () => ['store-put', 'single-writer'],
+	accepts: (reference) => reference.endsWith('/') || parseReference(reference, sourceContract()).ok,
 };
 
 void test('the authority is completed first', () => {
@@ -51,4 +55,11 @@ void test('a malformed escape is matched as typed', () => {
 
 void test('a malformed path before the hash completes nothing, not anchors', () => {
 	assert.deepEqual(complete('oikos/50%#', source), []);
+});
+
+void test('a heading the grammar rejects is not offered', () => {
+	assert.deepEqual(
+		complete('oikos/standards/validation.md#', source).map((completion) => completion.label),
+		['Hard checks', 'Validation'],
+	);
 });

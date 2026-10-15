@@ -10,7 +10,7 @@ import {
 } from 'obsidian';
 import { type Completion, complete, DEFAULT_AUTHORITIES } from '../core/completion.ts';
 import { referenceAt } from '../core/link-scan.ts';
-import { OIKOS } from '../core/reference.ts';
+import { OIKOS, parseReference } from '../core/reference.ts';
 import type { KadmosIndex } from './kadmos-index.ts';
 
 export class ReferenceSuggest extends EditorSuggest<Completion> {
@@ -37,6 +37,7 @@ export class ReferenceSuggest extends EditorSuggest<Completion> {
 			notes: (authority) => (authority === OIKOS ? index.activeNotes() : []),
 			headings: (authority, path) => (authority === OIKOS ? index.headings(path) : []),
 			anchors: (authority) => (authority === OIKOS ? [...(index.anchors?.index.sites.keys() ?? [])] : []),
+			accepts: (reference) => reference.endsWith('/') || parseReference(reference, index.contract).ok,
 		});
 	}
 

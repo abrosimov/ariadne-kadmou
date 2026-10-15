@@ -67,3 +67,17 @@ void test('a code link fills the template', () => {
 		'vscode://file/C:/repo/a.go:3',
 	);
 });
+
+void test('a file with CRLF line endings declares its anchors too', () => {
+	const crlf = indexAnchors(
+		[
+			{
+				path: 'a.go',
+				text: '// ariadne-kadmou[put|implements|kadmos://oikos/decisions/put.md]\r\nfunc Put() {}\r\n',
+			},
+		],
+		sourceContract(),
+	);
+	assert.deepEqual([...crlf.sites.keys()], ['put']);
+	assert.deepEqual(crlf.problems, []);
+});

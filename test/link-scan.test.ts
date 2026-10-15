@@ -44,6 +44,9 @@ void test('the text after the scheme is the query while a reference is typed', (
 		end: 33,
 		query: 'oikos/sta',
 	});
+	// A path completed in front of a heading keeps the heading.
+	assert.equal(referenceAt('[x](kadmos://oikos/a.md#Usage)', 20)?.end, 23);
+	assert.equal(referenceAt('[x](kadmos://oikos/a.md#Usage)', 25)?.end, 29);
 	assert.equal(referenceAt('[x](kadmos://oikos/a.md) more', 29), undefined);
 	assert.equal(referenceAt('nothing here', 5), undefined);
 });
