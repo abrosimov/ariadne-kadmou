@@ -44,7 +44,14 @@ npm run format   # Prettier
 npm run typecheck
 npm run lint     # fails on any warning
 npm test         # node:test over test/, including the kadmos conformance vectors
+npm run e2e      # builds, then runs test/e2e/ in real Obsidian (on Linux without a display: xvfb-run -a npm run e2e)
 ```
+
+End-to-end tests run through WebdriverIO and `wdio-obsidian-service`, which downloads
+Obsidian into `.obsidian-cache/` and opens each vault under `test/e2e/vaults/` in a sandbox.
+They run on the plugin's `minAppVersion` with its oldest installer and on the latest
+release. `minAppVersion` equals the version of the `obsidian` API package the plugin
+compiles against, so no newer API can slip in unnoticed.
 
 CI runs `format:check`, `typecheck`, `lint`, `test` and `build`; any finding fails it.
 Lint is typescript-eslint `strictTypeChecked` and `stylisticTypeChecked`, unicorn, the

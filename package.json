@@ -12,13 +12,19 @@
 		"test": "node --test \"test/**/*.test.ts\"",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit && tsc --noEmit -p test/e2e",
+		"e2e": "npm run build && wdio run ./wdio.conf.mts"
 	},
 	"keywords": [],
 	"license": "0-BSD",
 	"devDependencies": {
 		"@eslint/js": "9.39.4",
+		"@types/mocha": "10.0.10",
 		"@types/node": "22.19.17",
+		"@wdio/cli": "9.32.0",
+		"@wdio/globals": "9.31.3",
+		"@wdio/local-runner": "9.32.0",
+		"@wdio/mocha-framework": "9.32.0",
 		"esbuild": "0.25.5",
 		"eslint": "9.39.4",
 		"eslint-config-prettier": "10.1.8",
@@ -26,10 +32,14 @@
 		"eslint-plugin-unicorn": "65.0.1",
 		"globals": "17.6.0",
 		"jiti": "2.7.0",
-		"obsidian": "1.12.3",
+		"mocha": "11.8.0",
+		"obsidian": "1.8.7",
 		"prettier": "3.9.10",
 		"typescript": "5.9.3",
-		"typescript-eslint": "8.71.2"
+		"typescript-eslint": "8.71.2",
+		"wdio-obsidian-reporter": "3.3.0",
+		"wdio-obsidian-service": "3.3.0",
+		"webdriverio": "9.32.0"
 	},
 	"engines": {
 		"node": ">=22.18"
