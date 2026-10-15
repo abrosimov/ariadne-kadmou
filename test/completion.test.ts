@@ -14,7 +14,7 @@ const source: CompletionSource = {
 	headings: (_authority, path) =>
 		path === 'standards/validation.md' ? ['Validation', 'Hard checks', 'C# bindings', 'L12'] : [],
 	anchors: () => ['store-put', 'single-writer'],
-	accepts: (reference) => reference.endsWith('/') || parseReference(reference, sourceContract()).ok,
+	accepts: (reference) => parseReference(reference, sourceContract()).ok,
 };
 
 void test('the authority is completed first', () => {

@@ -25,10 +25,6 @@ export interface Completion {
 const LIMIT = 50;
 
 export function complete(query: string, source: CompletionSource): Completion[] {
-	return candidates(query, source).filter((completion) => source.accepts(completion.reference));
-}
-
-function candidates(query: string, source: CompletionSource): Completion[] {
 	const slash = query.indexOf('/');
 	if (slash === -1) {
 		return source.authorities
@@ -40,23 +36,39 @@ function candidates(query: string, source: CompletionSource): Completion[] {
 	const rest = query.slice(slash + 1);
 	const hash = rest.indexOf('#');
 	if (hash === -1) {
-		return matching(source.notes(authority), rest, (path) => formatReference({ kind: 'note', authority, path }));
+		return matching(
+			source.notes(authority),
+			rest,
+			(path) => formatReference({ kind: 'note', authority, path }),
+			source.accepts,
+		);
 	}
 	const path = decode(rest.slice(0, hash));
 	const typed = rest.slice(hash + 1);
 	if (path === undefined) return [];
 	if (path === '') {
-		return matching(source.anchors(authority), typed, (slug) =>
-			formatReference({ kind: 'anchor', authority, slug }),
+		return matching(
+			source.anchors(authority),
+			typed,
+			(slug) => formatReference({ kind: 'anchor', authority, slug }),
+			source.accepts,
 		);
 	}
-	return matching(source.headings(authority, path), typed, (fragment) =>
-		formatReference({ kind: 'note', authority, path, fragment }),
+	return matching(
+		source.headings(authority, path),
+		typed,
+		(fragment) => formatReference({ kind: 'note', authority, path, fragment }),
+		source.accepts,
 	);
 }
 
 // What contains the typed text, best matches first, each with the reference it completes to.
-function matching(items: readonly string[], typed: string, reference: (item: string) => string): Completion[] {
+function matching(
+	items: readonly string[],
+	typed: string,
+	reference: (item: string) => string,
+	accepts: (reference: string) => boolean,
+): Completion[] {
 	const needle = (decode(typed) ?? typed).toLowerCase();
 	return items
 		.filter((item) => item.toLowerCase().includes(needle))
@@ -64,8 +76,9 @@ function matching(items: readonly string[], typed: string, reference: (item: str
 			const byRank = rank(a, needle) - rank(b, needle);
 			return byRank === 0 ? a.localeCompare(b) : byRank;
 		})
-		.slice(0, LIMIT)
-		.map((item) => ({ label: item, reference: reference(item) }));
+		.map((item) => ({ label: item, reference: reference(item) }))
+		.filter((completion) => accepts(completion.reference))
+		.slice(0, LIMIT);
 }
 
 export const DEFAULT_AUTHORITIES: readonly string[] = [OIKOS];

@@ -3,6 +3,7 @@
 
 import type { App } from 'obsidian';
 import { Latest } from '../core/latest.ts';
+import type { SourceCache } from '../core/source-scan.ts';
 import { scanCodeAnchors } from './code-anchors.ts';
 import { EditorLinks } from './editor.ts';
 import { KadmosIndex } from './kadmos-index.ts';
@@ -25,6 +26,10 @@ export class Session {
 	private pending: HTMLElement[] | undefined = [];
 	private readonly loads = new Latest();
 	private readonly scans = new Latest();
+	// The last successful scan's cache, kept across a failed one.
+	private cache: SourceCache | undefined;
+	// Whether any view may carry marks; without an index and without marks, a refresh has nothing to do.
+	private marked = false;
 	private scannedAt = 0;
 
 	constructor(app: App, status: HTMLElement) {
@@ -51,6 +56,7 @@ export class Session {
 		const kadmos = loaded.value;
 		this.kadmos = kadmos;
 		this.index = kadmos.kind === 'vault' ? new KadmosIndex(this.app, kadmos.path, kadmos.contract) : undefined;
+		this.cache = undefined;
 		const index = this.index;
 		if (index !== undefined) for (const element of this.pending ?? []) decorateAll(element, index);
 		this.pending = undefined;
@@ -63,7 +69,7 @@ export class Session {
 		if (index === undefined) return;
 		const result = await this.scans.run(
 			async () =>
-				await scanCodeAnchors(this.app, index.root, index.contract, index.anchors?.cache).catch(
+				await scanCodeAnchors(this.app, index.root, index.contract, this.cache).catch(
 					(error: unknown) => `Code anchors could not be scanned: ${String(error)}`,
 				),
 		);
@@ -71,6 +77,7 @@ export class Session {
 		if (result === undefined || index !== this.index) return;
 		this.scannedAt = Date.now();
 		index.scan = result.value;
+		if (typeof result.value !== 'string') this.cache = result.value.cache;
 		this.render();
 	}
 
@@ -91,6 +98,8 @@ export class Session {
 	 * text stands.
 	 */
 	refresh(): void {
+		if (this.index === undefined && !this.marked) return;
+		this.marked = this.index !== undefined;
 		this.editorLinks.refresh();
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			decorateAll(leaf.view.containerEl, this.index);

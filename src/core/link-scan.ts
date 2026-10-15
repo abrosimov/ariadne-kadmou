@@ -65,8 +65,9 @@ export function referenceAt(
 	if (start === -1) return undefined;
 	const query = before.slice(start + SCHEME.length);
 	if (BOUNDARY.test(query)) return undefined;
-	// Completing a path keeps the fragment after it; completing a fragment replaces it.
-	const boundary = query.includes('#') ? BOUNDARY : /[\s()<>[\]#]/u;
+	// What is being completed ends where the next level begins: an authority at
+	// its slash, a path at its fragment; a fragment runs to the end.
+	const boundary = query.includes('#') ? BOUNDARY : query.includes('/') ? /[\s()<>[\]#]/u : /[\s()<>[\]#/]/u;
 	const rest = line.slice(cursor).search(boundary);
 	return { start, end: rest === -1 ? line.length : cursor + rest, query };
 }

@@ -20,13 +20,22 @@ the child that is. Without either Ariadne stays idle.
   completes the authority, an active note path, a heading or an anchor slug.
 - **Code anchors.** On the desktop, Ariadne scans the repository of the vault for
   `ariadne-kadmou[<slug>|<relation>|<reference>]` declarations: the opened folder, or its
-  parent when the parent's `.vault-root` names it. Dot-directories, `node_modules`, the
-  vault itself and files over 1 MiB are skipped. `kadmos://oikos/#<slug>` resolves to the
-  one declaration of that slug and opens the code at the address set in the settings
-  (`{url}` by default; `vscode://file/{path}:{line}` opens VS Code at the line). **Show
-  code anchors of this note** lists the anchors naming the note and what is wrong with its
-  `anchored_by`. The scan reruns when Obsidian regains focus and on **Rescan code
-  anchors**; malformed declarations are listed on the status bar item.
+  parent when the parent's `.vault-root` names it. The walk honours `.gitignore` files and
+  skips the vault itself, dot-entries, `node_modules`, symbolic links, binaries and files
+  over 1 MiB; a vault that is its own repository has nothing outside it to scan.
+  `kadmos://oikos/#<slug>` resolves to the one declaration of that slug and opens the code
+  at the address set in the settings (`{url}` by default; `vscode://file/{path}:{line}`
+  opens VS Code at the line). **Show code anchors of this note** lists the anchors naming
+  the note and what is wrong with its `anchored_by`. The scan reruns when Obsidian regains
+  focus, reading only files that changed, and on **Rescan code anchors**; malformed
+  declarations are listed on the status bar item.
+
+## File access
+
+To find code anchors Ariadne reads files outside the Obsidian vault: the repository the
+markers name, which is the parent folder when Obsidian is opened at the vault inside it.
+It only reads, never writes, sends nothing anywhere and makes no network request. Without
+`config.code_anchors` in the vault's schema it reads nothing outside the vault.
 
 ## Still to come
 

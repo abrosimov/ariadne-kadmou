@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
 import fs, { mkdir, mkdtemp, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import { syncBuiltinESMExports } from 'node:module';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -84,17 +82,40 @@ void test('a cached scan reads only what changed and forgets what is gone', asyn
 	assert.deepEqual([...first.cache.keys()].sort(), [a, b, c]);
 });
 
-void test('in a Git work tree, what Git ignores is not scanned', async () => {
+void test('what a .gitignore ignores is not scanned, and a nested one applies below it', async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), 'source-scan-'));
-	await mkdir(path.join(root, 'src'));
-	await mkdir(path.join(root, 'dist'));
-	await writeFile(path.join(root, '.gitignore'), 'dist/\n');
-	await writeFile(path.join(root, 'src/a.ts'), MARKER);
-	await writeFile(path.join(root, 'dist/a.js'), MARKER);
-	await promisify(execFile)('git', ['init', '--quiet'], { cwd: root });
-	const { files } = await filesMentioning(root, '', MARKER);
+	const files: Record<string, string> = {
+		'.gitignore': 'dist/\n*.gen.go\n',
+		'src/a.ts': MARKER,
+		'src/b.gen.go': MARKER,
+		'dist/a.js': MARKER,
+		'lib/.gitignore': 'fixtures/\n',
+		'lib/fixtures/c.go': MARKER,
+		'lib/d.go': MARKER,
+	};
+	for (const [file, text] of Object.entries(files)) {
+		await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+		await writeFile(path.join(root, file), text);
+	}
+	const { files: found } = await filesMentioning(root, '', MARKER);
 	assert.deepEqual(
-		files.map((file) => file.path),
-		['src/a.ts'],
+		found.map((file) => file.path),
+		['lib/d.go', 'src/a.ts'],
 	);
+});
+
+void test('an unreadable .gitignore ignores nothing and an unreadable file is skipped', async (context) => {
+	const root = await mkdtemp(path.join(os.tmpdir(), 'source-scan-'));
+	await writeFile(path.join(root, '.gitignore'), '*.go\n');
+	await writeFile(path.join(root, 'a.go'), MARKER);
+	context.mock.method(fs, 'readFile', async () => await Promise.reject(new Error('unreadable')));
+	syncBuiltinESMExports();
+	try {
+		const { files, cache } = await filesMentioning(root, '', MARKER);
+		assert.deepEqual(files, []);
+		assert.deepEqual([...cache.keys()], []);
+	} finally {
+		context.mock.restoreAll();
+		syncBuiltinESMExports();
+	}
 });

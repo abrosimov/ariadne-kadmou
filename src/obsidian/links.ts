@@ -26,6 +26,7 @@ export function attributes(uri: string, index: KadmosIndex): Record<string, stri
 /** Marks a rendered link, replacing an earlier mark; without an index, removes the mark. */
 export function decorate(element: HTMLElement, uri: string, index: KadmosIndex | undefined): void {
 	const previous = element.getAttribute(STATUS_ATTRIBUTE);
+	if (index === undefined && previous === null) return;
 	if (previous !== null) element.removeClasses([LINK_CLASS, `is-${previous}`]);
 	if (index === undefined) {
 		for (const name of [URI_ATTRIBUTE, STATUS_ATTRIBUTE, 'aria-label']) element.removeAttribute(name);

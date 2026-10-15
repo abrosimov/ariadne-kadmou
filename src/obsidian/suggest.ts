@@ -37,7 +37,7 @@ export class ReferenceSuggest extends EditorSuggest<Completion> {
 			notes: (authority) => (authority === OIKOS ? index.activeNotes() : []),
 			headings: (authority, path) => (authority === OIKOS ? index.headings(path) : []),
 			anchors: (authority) => (authority === OIKOS ? [...(index.anchors?.index.sites.keys() ?? [])] : []),
-			accepts: (reference) => reference.endsWith('/') || parseReference(reference, index.contract).ok,
+			accepts: (reference) => parseReference(reference, index.contract).ok,
 		});
 	}
 
