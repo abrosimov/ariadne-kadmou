@@ -10,10 +10,12 @@
 		"noUncheckedIndexedAccess": true,
 		"moduleResolution": "node",
 		"isolatedModules": true,
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"allowSyntheticDefaultImports": true,
 		"lib": ["ES2021", "DOM"]
 	},
-	"include": ["src/**/*.ts"]
+	"include": ["src/**/*.ts", "test/**/*.ts"]
 }

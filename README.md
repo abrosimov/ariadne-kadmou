@@ -7,10 +7,16 @@ the vault's own notes, follows code anchors declared as
 `ariadne-kadmou[<slug>|<relation>|<reference>]` in source and model files, and shows the
 findings of Lynkeus, the kadmos validator, on the notes they concern.
 
-Status: pre-alpha. The repository was started from the Obsidian sample plugin and holds
-no feature yet. The specification will live in `docs/` as a kadmos vault with a
-dependency on `kadmos`, so that the plugin's own documentation is the first consumer of
-the mechanisms it navigates.
+Status: pre-alpha. The plugin locates the kadmos vault by its markers and reads its
+contract from the root schema; the parsers and the resolver below it reproduce the kadmos
+conformance vectors, and nothing is shown in notes yet. The specification will live in this
+repository as a kadmos vault, in the child its root `.vault-root` names, with a dependency
+on `kadmos`, so that the plugin's own documentation is the first consumer of the
+mechanisms it navigates.
+
+Ariadne finds the kadmos vault only where the markers put it: a `.vault-profile` at the
+root of the opened folder makes that folder the vault, a `.vault-root` there names the
+child that is. Without either it stays idle.
 
 ## What it will do
 
@@ -28,14 +34,20 @@ The contract Ariadne follows is fixed in kadmos: `standards/cross-instance-refer
 
 ## Development
 
-Node.js 18 or later, npm, esbuild, as the sample plugin prescribes.
+Node.js 22.18 or later, for the type stripping the tests run on; npm, esbuild.
 
 ```bash
 npm install
 npm run dev      # watch build of src/main.ts into main.js
 npm run build    # production build
 npm run lint
+npm test         # node:test over test/, including the kadmos conformance vectors
 ```
+
+`src/core/` is free of Obsidian: the `kadmos://` grammar, the anchor declaration, the
+resolver, the vault markers and the reader of the root schema. The vectors under
+`test/vectors/` are copied from kadmos at the commit their header names; refresh them by
+copying again, never by editing a vector.
 
 To try a build, copy `main.js`, `manifest.json` and `styles.css` into
 `<vault>/.obsidian/plugins/ariadne-kadmou/` and enable the plugin.

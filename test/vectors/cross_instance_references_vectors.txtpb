@@ -1,0 +1,127 @@
+# Vendored from abrosimov/kadmos@aecf172802282bc79cdefddfce84a9ea3527afc5 standards/cross_instance_references_vectors.txtpb.
+# Refresh by copying the file again and updating this pin; never edit a vector here.
+
+# standards/cross_instance_references_vectors.txtpb -- conformance vectors for
+# standards/cross-instance-references.md, as cadmus.v1.ConformanceVectors
+# (proto/cadmus/v1/conformance.proto). Data an implementation reproduces.
+
+# --- Grammar --------------------------------------------------------------
+
+reference_grammar {
+  reference: "kadmos://oikos/decisions/2026/10/D-00017-idempotent-put.md"
+  valid: true
+  authority: "oikos"
+  path: "decisions/2026/10/D-00017-idempotent-put.md"
+}
+reference_grammar {
+  reference: "kadmos://nomos/invariants/INV-00007-single-writer.md#Statement"
+  valid: true
+  authority: "nomos"
+  path: "invariants/INV-00007-single-writer.md"
+  fragment: "Statement"
+}
+reference_grammar {
+  reference: "kadmos://oikos/#store-put"
+  valid: true
+  authority: "oikos"
+  slug: "store-put"
+}
+reference_grammar {
+  reference: "kadmos://fpf/#store-put"
+  valid: true
+  authority: "fpf"
+  slug: "store-put"
+}
+# A retention root is never written into an address.
+reference_grammar {
+  reference: "kadmos://oikos/archive/decisions/2026/10/D-00017-idempotent-put.md"
+  valid: false
+}
+# A note address carries the extension.
+reference_grammar {
+  reference: "kadmos://oikos/decisions/2026/10/D-00017-idempotent-put"
+  valid: false
+}
+# Line numbers are not addresses.
+reference_grammar {
+  reference: "kadmos://oikos/decisions/2026/10/D-00017-idempotent-put.md#L12-L20"
+  valid: false
+}
+# An anchor address has no path and a slug in slug form.
+reference_grammar {
+  reference: "kadmos://oikos#store-put"
+  valid: false
+}
+reference_grammar {
+  reference: "kadmos://oikos/#Store_Put"
+  valid: false
+}
+# An authority is required.
+reference_grammar {
+  reference: "kadmos:///decisions/2026/10/D-00017-idempotent-put.md"
+  valid: false
+}
+
+# --- Resolution -----------------------------------------------------------
+
+reference_resolution {
+  reference: "kadmos://nomos/decisions/2026/09/D-00017-normative-lifecycle.md"
+  direct_dependency: "nomos"
+  file: "decisions/2026/09/D-00017-normative-lifecycle.md"
+  expected: RESOLVED
+}
+reference_resolution {
+  reference: "kadmos://nomos/decisions/2026/09/D-00017-normative-lifecycle.md#Decision"
+  direct_dependency: "nomos"
+  file: "decisions/2026/09/D-00017-normative-lifecycle.md"
+  heading: "Decision"
+  expected: RESOLVED
+}
+reference_resolution {
+  reference: "kadmos://nomos/decisions/2026/09/D-00017-normative-lifecycle.md#Decision"
+  direct_dependency: "nomos"
+  file: "decisions/2026/09/D-00017-normative-lifecycle.md"
+  heading: "Rationale"
+  expected: MISSING
+}
+# The target was superseded and buried: the address still finds it.
+reference_resolution {
+  reference: "kadmos://nomos/decisions/2026/09/D-00017-normative-lifecycle.md"
+  direct_dependency: "nomos"
+  file: "graveyard/decisions/2026/09/D-00017-normative-lifecycle.md"
+  file: "decisions/2026/10/D-00031-normative-lifecycle.md"
+  expected: STALE
+}
+# The target was resolved and archived.
+reference_resolution {
+  reference: "kadmos://nomos/open_questions/2026/09/OQ-00004-carrier.md"
+  direct_dependency: "nomos"
+  file: "archive/open_questions/2026/09/OQ-00004-carrier.md"
+  expected: STALE
+}
+# The target moved without a retention change: same basename elsewhere.
+reference_resolution {
+  reference: "kadmos://nomos/decisions/2026/09/D-00017-normative-lifecycle.md"
+  direct_dependency: "nomos"
+  file: "decisions/2026/10/D-00017-normative-lifecycle.md"
+  expected: RENAMED
+}
+reference_resolution {
+  reference: "kadmos://nomos/decisions/2026/09/D-00099-absent.md"
+  direct_dependency: "nomos"
+  file: "decisions/2026/09/D-00017-normative-lifecycle.md"
+  expected: MISSING
+}
+# fpf is reachable only through nomos: not referenced until declared.
+reference_resolution {
+  reference: "kadmos://fpf/terms/TERM-00042-invariant.md"
+  direct_dependency: "nomos"
+  file: "terms/TERM-00042-invariant.md"
+  expected: NOT_A_DIRECT_DEPENDENCY
+}
+# oikos needs no declaration.
+reference_resolution {
+  reference: "kadmos://oikos/standards/note-lifecycle.md"
+  file: "standards/note-lifecycle.md"
+  expected: RESOLVED
+}
