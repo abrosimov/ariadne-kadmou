@@ -63,3 +63,13 @@ void test('a heading the grammar rejects is not offered', () => {
 		['Hard checks', 'Validation'],
 	);
 });
+
+void test('at most fifty are offered, and rejected ones take no place among them', () => {
+	const many: CompletionSource = {
+		...source,
+		headings: () => ['L1', ...Array.from({ length: 60 }, (_, index) => `Part ${String(index).padStart(2, '0')}`)],
+	};
+	const offered = complete('oikos/a.md#', many);
+	assert.equal(offered.length, 50);
+	assert.equal(offered[0]?.label, 'Part 00');
+});

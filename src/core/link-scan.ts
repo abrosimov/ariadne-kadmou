@@ -69,5 +69,7 @@ export function referenceAt(
 	// its slash, a path at its fragment; a fragment runs to the end.
 	const boundary = query.includes('#') ? BOUNDARY : query.includes('/') ? /[\s()<>[\]#]/u : /[\s()<>[\]#/]/u;
 	const rest = line.slice(cursor).search(boundary);
-	return { start, end: rest === -1 ? line.length : cursor + rest, query };
+	const end = rest === -1 ? line.length : cursor + rest;
+	// An authority completes with its slash, so the slash already there goes with it.
+	return { start, end: line.charAt(end) === '/' ? end + 1 : end, query };
 }

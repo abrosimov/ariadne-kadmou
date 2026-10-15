@@ -59,7 +59,8 @@ export async function filesMentioning(
 			// Gone or unreadable since it was listed.
 		}
 	};
-	const listed = await walk(root, excluded, []);
+	const listed: string[] = [];
+	await walk(root, excluded, [], listed);
 	for (let start = 0; start < listed.length; start += PARALLEL_READS) {
 		await Promise.all(listed.slice(start, start + PARALLEL_READS).map(read));
 	}
@@ -71,27 +72,35 @@ export async function filesMentioning(
 }
 
 // Directories one at a time, so a large tree does not exhaust file handles.
-async function walk(directory: string, excluded: string, inherited: readonly Rules[]): Promise<string[]> {
+async function walk(directory: string, excluded: string, inherited: readonly Rules[], files: string[]): Promise<void> {
 	const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
 	const own = entries.some((entry) => entry.name === '.gitignore' && entry.isFile())
 		? await readFile(path.join(directory, '.gitignore'), 'utf8').catch(() => '')
 		: '';
-	const rules = own === '' ? inherited : [...inherited, { base: directory, ignores: ignore().add(own) }];
-	const files: string[] = [];
+	const rules = own === '' ? inherited : [{ base: directory, ignores: ignore().add(own) }, ...inherited];
 	for (const entry of entries) {
 		const full = path.join(directory, entry.name);
 		const isDirectory = entry.isDirectory();
-		if (entry.name.startsWith('.') || full === excluded || ignored(rules, full, isDirectory)) continue;
-		if (isDirectory && !SKIPPED_DIRECTORIES.has(entry.name)) files.push(...(await walk(full, excluded, rules)));
+		if (entry.name.startsWith('.') || within(excluded, full) || ignored(rules, full, isDirectory)) continue;
+		if (isDirectory && !SKIPPED_DIRECTORIES.has(entry.name)) await walk(full, excluded, rules, files);
 		else if (entry.isFile()) files.push(full);
 	}
-	return files;
 }
 
+// As in Git, the deepest .gitignore that decides a path wins, so it may re-include what an outer one ignores.
 function ignored(rules: readonly Rules[], file: string, isDirectory: boolean): boolean {
-	return rules.some(({ base, ignores }) =>
-		ignores.ignores(posix(path.relative(base, file)) + (isDirectory ? '/' : '')),
-	);
+	for (const { base, ignores } of rules) {
+		const { ignored: excluded, unignored } = ignores.test(
+			posix(path.relative(base, file)) + (isDirectory ? '/' : ''),
+		);
+		if (excluded || unignored) return excluded;
+	}
+	return false;
+}
+
+function within(directory: string, file: string): boolean {
+	const relative = path.relative(directory, file);
+	return directory !== '' && !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
 function posix(relative: string): string {

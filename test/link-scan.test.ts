@@ -48,7 +48,13 @@ void test('the text after the scheme is the query while a reference is typed', (
 	assert.equal(referenceAt('[x](kadmos://oikos/a.md#Usage)', 20)?.end, 23);
 	assert.equal(referenceAt('[x](kadmos://oikos/a.md#Usage)', 25)?.end, 29);
 	// An authority completed in front of a path keeps the path.
-	assert.equal(referenceAt('[x](kadmos://oikos/a.md#Usage)', 15)?.end, 18);
+	const line2 = '[x](kadmos://oikos/a.md#Usage)';
+	const authority = referenceAt(line2, 15);
+	assert.ok(authority !== undefined);
+	assert.equal(
+		`${line2.slice(0, authority.start)}kadmos://oikos/${line2.slice(authority.end)}`,
+		'[x](kadmos://oikos/a.md#Usage)',
+	);
 	assert.equal(referenceAt('[x](kadmos://oikos/a.md) more', 29), undefined);
 	assert.equal(referenceAt('nothing here', 5), undefined);
 });

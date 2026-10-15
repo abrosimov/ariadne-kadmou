@@ -89,7 +89,8 @@ void test('what a .gitignore ignores is not scanned, and a nested one applies be
 		'src/a.ts': MARKER,
 		'src/b.gen.go': MARKER,
 		'dist/a.js': MARKER,
-		'lib/.gitignore': 'fixtures/\n',
+		'lib/.gitignore': 'fixtures/\n!keep.gen.go\n',
+		'lib/keep.gen.go': MARKER,
 		'lib/fixtures/c.go': MARKER,
 		'lib/d.go': MARKER,
 	};
@@ -100,7 +101,7 @@ void test('what a .gitignore ignores is not scanned, and a nested one applies be
 	const { files: found } = await filesMentioning(root, '', MARKER);
 	assert.deepEqual(
 		found.map((file) => file.path),
-		['lib/d.go', 'src/a.ts'],
+		['lib/d.go', 'lib/keep.gen.go', 'src/a.ts'],
 	);
 });
 

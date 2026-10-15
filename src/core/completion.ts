@@ -70,15 +70,19 @@ function matching(
 	accepts: (reference: string) => boolean,
 ): Completion[] {
 	const needle = (decode(typed) ?? typed).toLowerCase();
-	return items
+	const ranked = items
 		.filter((item) => item.toLowerCase().includes(needle))
 		.sort((a, b) => {
 			const byRank = rank(a, needle) - rank(b, needle);
 			return byRank === 0 ? a.localeCompare(b) : byRank;
-		})
-		.map((item) => ({ label: item, reference: reference(item) }))
-		.filter((completion) => accepts(completion.reference))
-		.slice(0, LIMIT);
+		});
+	const offered: Completion[] = [];
+	for (const item of ranked) {
+		if (offered.length === LIMIT) break;
+		const completion = { label: item, reference: reference(item) };
+		if (accepts(completion.reference)) offered.push(completion);
+	}
+	return offered;
 }
 
 export const DEFAULT_AUTHORITIES: readonly string[] = [OIKOS];

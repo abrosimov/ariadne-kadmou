@@ -30,6 +30,12 @@ the child that is. Without either Ariadne stays idle.
   focus, reading only files that changed, and on **Rescan code anchors**; malformed
   declarations are listed on the status bar item.
 
+The scan approximates what Git would list without running Git. It does not see files
+force-added past a `.gitignore`, does not read `.git/info/exclude` or a global excludes
+file, and applies an outer `.gitignore` inside submodules. Each rescan lists the tree
+again; only file contents are cached. Lynkeus, the validator, remains the authority on
+which declarations exist.
+
 ## File access
 
 To find code anchors Ariadne reads files outside the Obsidian vault: the repository the
