@@ -40,6 +40,8 @@ describe('code anchors', () => {
 				const opened: string[] = [];
 				Object.assign(window, { openedPaths: opened });
 				const electron = require('electron') as { shell: { openPath: (path: string) => Promise<string> } };
+				const original = electron.shell.openPath;
+				Object.assign(window, { restoreOpenPath: () => (electron.shell.openPath = original) });
 				electron.shell.openPath = async (file) => {
 					opened.push(file);
 					return await Promise.resolve('');
@@ -53,6 +55,9 @@ describe('code anchors', () => {
 				return opened.length === 1;
 			});
 			expect(opened[0]).toMatch(/[/\\]src[/\\]store\.go$/u);
+			await browser.execute(() => {
+				(window as unknown as { restoreOpenPath: () => void }).restoreOpenPath();
+			});
 		});
 
 		it('lists the anchors of a note with what is wrong in anchored_by', async () => {
@@ -89,23 +94,16 @@ describe('code anchors', () => {
 		});
 	});
 
-	describe('with a vault that is its own repository', () => {
-		it('finds no anchors in its own notes and data', async () => {
-			await browser.reloadObsidian({ vault: 'test/e2e/vaults/root-vault-mentions' });
-			await browser.waitUntil(async () => (await anchorCount()) === '0');
-			expect(await $(STATUS).getAttribute('aria-label')).toBe(
-				'Kadmos vault located by its markers; 0 code anchors',
-			);
-		});
-	});
-
-	describe('with Obsidian opened at the vault inside a repository', () => {
-		it('reads nothing outside the opened folder', async () => {
+	describe('with Obsidian opened at the vault', () => {
+		it('reads nothing outside the opened folder and says why anchors are unchecked', async () => {
 			const repository = path.join(await mkdtemp(path.join(os.tmpdir(), 'ariadne-')), 'repo');
 			await cp(FIXTURE, repository, { recursive: true });
 			await browser.reloadObsidian({ vault: path.join(repository, 'docs'), copy: false });
-			await browser.waitUntil(async () => (await anchorCount()) === '0');
-			expect(await $(STATUS).getText()).toBe('Kadmos: / (instance)');
+			await browser.waitUntil(async () => (await $(STATUS).getText()) === 'Kadmos: / (instance)');
+			expect(await anchorCount()).toBeNull();
+			await open('decisions/put.md', 'reading');
+			const marks = await statuses('.workspace-leaf.mod-active .markdown-reading-view a[data-kadmos-status]');
+			expect(marks['put anchor']).toBe('unchecked');
 		});
 	});
 });

@@ -21,7 +21,7 @@ the child that is. Without either Ariadne stays idle.
 - **Code anchors.** On the desktop, Ariadne scans the folder Obsidian opened for
   `ariadne-kadmou[<slug>|<relation>|<reference>]` declarations outside the kadmos vault.
   Open Obsidian at the repository root, whose `.vault-root` names the vault: opened at the
-  vault itself, it holds no code to scan. The walk honours `.gitignore` files and skips the
+  vault itself, anchors are reported as not checked. The walk honours `.gitignore` files and skips the
   vault, dot-entries, `node_modules`, symbolic links, binaries and files over 1 MiB.
   `kadmos://oikos/#<slug>` resolves to the one declaration of that slug and opens its file
   with the application the operating system assigns to it. **Show code anchors of this

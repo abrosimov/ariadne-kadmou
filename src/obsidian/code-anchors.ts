@@ -29,17 +29,14 @@ export async function scanCodeAnchors(
 	const adapter = app.vault.adapter;
 	if (codeAnchors === undefined) return 'Code anchors are not checked: the schema declares none';
 	if (!(adapter instanceof FileSystemAdapter)) return 'Code anchors are checked on the desktop only';
+	if (vaultPath === '') return 'Code anchors are not checked: open Obsidian at the repository root to scan its code';
 	const root = adapter.getBasePath();
-	// Opened at the vault itself, Obsidian holds no file outside it to anchor.
-	const { files, cache } =
-		vaultPath === ''
-			? { files: [], cache: new Map() }
-			: await filesMentioning(root, path.join(root, vaultPath), codeAnchors.marker, previous);
+	const { files, cache } = await filesMentioning(root, path.join(root, vaultPath), codeAnchors.marker, previous);
 	return { root, index: indexAnchors(files, { ...contract, codeAnchors }), cache };
 }
 
 /** Opens the code at an anchor with the operating system's default application. */
 export async function openCode(anchors: CodeAnchors, site: AnchorSite): Promise<void> {
-	const failure = await shell.openPath(path.join(anchors.root, ...site.file.split('/')));
+	const failure = await shell.openPath(path.join(anchors.root, ...site.file.split('/'))).catch(String);
 	if (failure !== '') new Notice(`${site.file} could not be opened: ${failure}`);
 }
