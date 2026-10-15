@@ -51,7 +51,7 @@ export async function locateVault(reader: MarkerReader): Promise<VaultLocation> 
 }
 
 // A marker is one UTF-8 line with one terminating LF and no surrounding whitespace.
-export function markerLine(content: string, file: string): Result<string> {
+function markerLine(content: string, file: string): Result<string> {
 	if (!content.endsWith('\n')) return fail(`${file} ends with one LF`);
 	const value = content.slice(0, -1);
 	if (value === '' || /\s/u.test(value) || value.trim() !== value) {

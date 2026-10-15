@@ -18,17 +18,16 @@ the child that is. Without either Ariadne stays idle.
   naming a vault that is not a direct dependency. A click follows it (a modified click in
   the source editor), the page preview shows its target, and typing after `kadmos://`
   completes the authority, an active note path, a heading or an anchor slug.
-- **Code anchors.** On the desktop, Ariadne scans the repository of the vault for
-  `ariadne-kadmou[<slug>|<relation>|<reference>]` declarations: the opened folder, or its
-  parent when the parent's `.vault-root` names it. The walk honours `.gitignore` files and
-  skips the vault itself, dot-entries, `node_modules`, symbolic links, binaries and files
-  over 1 MiB; a vault that is its own repository has nothing outside it to scan.
-  `kadmos://oikos/#<slug>` resolves to the one declaration of that slug and opens the code
-  at the address set in the settings (`{url}` by default; `vscode://file/{path}:{line}`
-  opens VS Code at the line). **Show code anchors of this note** lists the anchors naming
-  the note and what is wrong with its `anchored_by`. The scan reruns when Obsidian regains
-  focus, reading only files that changed, and on **Rescan code anchors**; malformed
-  declarations are listed on the status bar item.
+- **Code anchors.** On the desktop, Ariadne scans the folder Obsidian opened for
+  `ariadne-kadmou[<slug>|<relation>|<reference>]` declarations outside the kadmos vault.
+  Open Obsidian at the repository root, whose `.vault-root` names the vault: opened at the
+  vault itself, it holds no code to scan. The walk honours `.gitignore` files and skips the
+  vault, dot-entries, `node_modules`, symbolic links, binaries and files over 1 MiB.
+  `kadmos://oikos/#<slug>` resolves to the one declaration of that slug and opens its file
+  with the application the operating system assigns to it. **Show code anchors of this
+  note** lists the anchors naming the note and what is wrong with its `anchored_by`. The
+  scan reruns when Obsidian regains focus, reading only files that changed, and on
+  **Rescan code anchors**; malformed declarations are listed on the status bar item.
 
 The scan approximates what Git would list without running Git. It does not see files
 force-added past a `.gitignore`, does not read `.git/info/exclude` or a global excludes
@@ -36,12 +35,30 @@ file, and applies an outer `.gitignore` inside submodules. Each rescan lists the
 again; only file contents are cached. Lynkeus, the validator, remains the authority on
 which declarations exist.
 
-## File access
+Ariadne reads only inside the folder Obsidian opened, writes nothing, sends nothing
+anywhere and makes no network request.
 
-To find code anchors Ariadne reads files outside the Obsidian vault: the repository the
-markers name, which is the parent folder when Obsidian is opened at the vault inside it.
-It only reads, never writes, sends nothing anywhere and makes no network request. Without
-`config.code_anchors` in the vault's schema it reads nothing outside the vault.
+## Installation
+
+Ariadne is not in the community plugin catalogue yet. It needs Obsidian 1.8.7 or later on
+the desktop.
+
+**With BRAT.** [BRAT](https://github.com/TfTHacker/obsidian42-brat) installs plugins from
+the GitHub releases of a repository and keeps them updated.
+
+1. In **Settings → Community plugins**, install and enable **BRAT**.
+2. While this repository is private, give BRAT a GitHub token that can read it: a
+   fine-grained personal access token for `abrosimov/ariadne-kadmou` with **Contents:
+   Read**, entered in BRAT's settings.
+3. Run **BRAT: Add a beta plugin for testing**, enter `abrosimov/ariadne-kadmou`, choose a
+   version, and enable **Ariadne kadmou** in **Settings → Community plugins**.
+
+BRAT sees published releases only. The release workflow creates a draft for each tag;
+publish the draft to make it installable.
+
+**By hand.** Copy `main.js`, `manifest.json` and `styles.css` from a release, or from
+`npm run build`, into `<vault>/.obsidian/plugins/ariadne-kadmou/`, then enable the plugin
+in **Settings → Community plugins**.
 
 ## Still to come
 
@@ -83,9 +100,6 @@ layout belongs to Prettier. Every dev dependency is pinned to an exact version.
 resolver, the vault markers and the reader of the root schema. The vectors under
 `test/vectors/` are copied from kadmos at the commit their header names; refresh them by
 copying again, never by editing a vector.
-
-To try a build, copy `main.js`, `manifest.json` and `styles.css` into
-`<vault>/.obsidian/plugins/ariadne-kadmou/` and enable the plugin.
 
 ## Releasing
 

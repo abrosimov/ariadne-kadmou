@@ -35,20 +35,24 @@ describe('code anchors', () => {
 			});
 		});
 
-		it('opens the code at the anchor through the configured address', async () => {
-			await browser.executeObsidian(({ plugins }) => {
-				Object.assign(plugins['ariadneKadmou'] as unknown as { settings: object }, {
-					settings: { codeLinkTemplate: 'test://{path}:{line}' },
-				});
+		it('opens the code at the anchor with the default application', async () => {
+			await browser.executeObsidian(({ require }) => {
+				const opened: string[] = [];
+				Object.assign(window, { openedPaths: opened });
+				const electron = require('electron') as { shell: { openPath: (path: string) => Promise<string> } };
+				electron.shell.openPath = async (file) => {
+					opened.push(file);
+					return await Promise.resolve('');
+				};
 			});
 			await open(NOTE, 'reading');
 			await clickLink('.markdown-reading-view', 'put anchor');
 			let opened: string[] = [];
 			await browser.waitUntil(async () => {
-				opened = await recorded('opened');
+				opened = await recorded('openedPaths');
 				return opened.length === 1;
 			});
-			expect(opened[0]).toMatch(/^test:\/\/.*\/src\/store\.go:3$/u);
+			expect(opened[0]).toMatch(/[/\\]src[/\\]store\.go$/u);
 		});
 
 		it('lists the anchors of a note with what is wrong in anchored_by', async () => {
@@ -95,12 +99,12 @@ describe('code anchors', () => {
 		});
 	});
 
-	describe('with Obsidian opened at the vault the parent repository declares', () => {
-		it('scans the parent repository', async () => {
+	describe('with Obsidian opened at the vault inside a repository', () => {
+		it('reads nothing outside the opened folder', async () => {
 			const repository = path.join(await mkdtemp(path.join(os.tmpdir(), 'ariadne-')), 'repo');
 			await cp(FIXTURE, repository, { recursive: true });
 			await browser.reloadObsidian({ vault: path.join(repository, 'docs'), copy: false });
-			await browser.waitUntil(async () => (await anchorCount()) === '3');
+			await browser.waitUntil(async () => (await anchorCount()) === '0');
 			expect(await $(STATUS).getText()).toBe('Kadmos: / (instance)');
 		});
 	});

@@ -4,21 +4,13 @@ import { AnchorModal } from './obsidian/anchor-modal.ts';
 import { openCode } from './obsidian/code-anchors.ts';
 import { HOVER_SOURCE, LinkFollower } from './obsidian/links.ts';
 import { Session } from './obsidian/session.ts';
-import { DEFAULT_SETTINGS, type Settings, SettingsTab } from './obsidian/settings.ts';
 import { ReferenceSuggest } from './obsidian/suggest.ts';
 import { listen, onEveryWindow } from './obsidian/windows.ts';
 
 export default class AriadnePlugin extends Plugin {
-	settings: Settings = { ...DEFAULT_SETTINGS };
 	session!: Session;
 
-	override async onload(): Promise<void> {
-		this.settings = { ...DEFAULT_SETTINGS, ...((await this.loadData()) as Partial<Settings> | null) };
-		this.addSettingTab(
-			new SettingsTab(this.app, this, this.settings, async () => {
-				await this.saveData(this.settings);
-			}),
-		);
+	override onload(): void {
 		const status = this.addStatusBarItem();
 		status.addClass('ariadne-kadmou-status');
 		status.toggle(false);
@@ -30,7 +22,7 @@ export default class AriadnePlugin extends Plugin {
 
 		const open = (site: AnchorSite): void => {
 			const anchors = session.index?.anchors;
-			if (anchors !== undefined) openCode(anchors, site, this.settings.codeLinkTemplate);
+			if (anchors !== undefined) void openCode(anchors, site);
 		};
 		this.addCommand({
 			id: 'reload-kadmos-vault',

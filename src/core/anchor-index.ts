@@ -70,12 +70,3 @@ export function pairingProblems(index: AnchorIndex, path: string, listed: readon
 	for (const slug of naming) if (!listed.includes(slug)) problems.push(`"${slug}" names this note but is not listed`);
 	return problems;
 }
-
-/**
- * The address a code location opens at: `{url}` is the file URL, `{path}` the
- * absolute path with `/` separators, escaped for a URL path, `{line}` the line.
- */
-export function codeLink(template: string, absolutePath: string, fileUrl: string, line: number): string {
-	const path = encodeURI(absolutePath.replaceAll('\\', '/')).replaceAll('#', '%23').replaceAll('?', '%3F');
-	return template.replaceAll('{url}', fileUrl).replaceAll('{path}', path).replaceAll('{line}', String(line));
-}

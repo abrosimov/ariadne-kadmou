@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { anchorsNaming, codeLink, indexAnchors, pairingProblems } from '../src/core/anchor-index.ts';
+import { anchorsNaming, indexAnchors, pairingProblems } from '../src/core/anchor-index.ts';
 import { sourceContract } from './support.ts';
 
 const index = indexAnchors(
@@ -53,19 +53,6 @@ void test('anchored_by is exact: listed slugs exist and name the note, naming sl
 	assert.deepEqual(pairingProblems(index, 'decisions/other.md', ['store-put', 'twice']), [
 		'"store-put" is listed but does not name this note',
 	]);
-});
-
-void test('a code link fills the template', () => {
-	assert.equal(
-		codeLink('vscode://file/{path}:{line}', '/repo/my src/a.go', 'file:///repo/my%20src/a.go', 7),
-		'vscode://file//repo/my%20src/a.go:7',
-	);
-	assert.equal(codeLink('{url}', '/a.go', 'file:///a.go', 1), 'file:///a.go');
-	assert.equal(codeLink('x://{path}', '/repo/C#/a?.cs', '', 1), 'x:///repo/C%23/a%3F.cs');
-	assert.equal(
-		codeLink('vscode://file/{path}:{line}', String.raw`C:\repo\a.go`, '', 3),
-		'vscode://file/C:/repo/a.go:3',
-	);
 });
 
 void test('a file with CRLF line endings declares its anchors too', () => {

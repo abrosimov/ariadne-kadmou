@@ -1,19 +1,17 @@
-// The code anchors of the kadmos vault's repository. The code lies outside
+// The code anchors of the kadmos vault's repository, which is the folder
+// Obsidian opened: Ariadne reads nothing outside it. The code lies outside
 // what Obsidian indexes, so the scan reads the file system and runs on the
 // desktop only.
 
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { type App, FileSystemAdapter } from 'obsidian';
-import { type AnchorIndex, type AnchorSite, codeLink, indexAnchors } from '../core/anchor-index.ts';
+import { shell } from 'electron';
+import { type App, FileSystemAdapter, Notice } from 'obsidian';
+import { type AnchorIndex, type AnchorSite, indexAnchors } from '../core/anchor-index.ts';
 import type { VaultContract } from '../core/contract.ts';
-import { repositoryIsParent } from '../core/repository.ts';
 import { filesMentioning, type SourceCache } from '../core/source-scan.ts';
-import { ROOT_MARKER } from '../core/vault-location.ts';
 
 export interface CodeAnchors {
-	/** Absolute path of the repository root. */
+	/** Absolute path of the repository root: the folder Obsidian opened. */
 	readonly root: string;
 	readonly index: AnchorIndex;
 	/** Where the next scan starts from. */
@@ -31,20 +29,17 @@ export async function scanCodeAnchors(
 	const adapter = app.vault.adapter;
 	if (codeAnchors === undefined) return 'Code anchors are not checked: the schema declares none';
 	if (!(adapter instanceof FileSystemAdapter)) return 'Code anchors are checked on the desktop only';
-	const opened = adapter.getBasePath();
-	const parentMarker = await readFile(path.join(path.dirname(opened), ROOT_MARKER), 'utf8').catch(() => undefined);
-	const root = repositoryIsParent(vaultPath, path.basename(opened), parentMarker) ? path.dirname(opened) : opened;
-	const vault = path.join(opened, vaultPath);
-	// A vault at the repository root leaves no file outside it to anchor.
+	const root = adapter.getBasePath();
+	// Opened at the vault itself, Obsidian holds no file outside it to anchor.
 	const { files, cache } =
-		root === vault
+		vaultPath === ''
 			? { files: [], cache: new Map() }
-			: await filesMentioning(root, vault, codeAnchors.marker, previous);
+			: await filesMentioning(root, path.join(root, vaultPath), codeAnchors.marker, previous);
 	return { root, index: indexAnchors(files, { ...contract, codeAnchors }), cache };
 }
 
-/** Opens the code at an anchor through the address the template builds. */
-export function openCode(anchors: CodeAnchors, site: AnchorSite, template: string): void {
-	const file = path.join(anchors.root, ...site.file.split('/'));
-	window.open(codeLink(template, file, pathToFileURL(file).href, site.line));
+/** Opens the code at an anchor with the operating system's default application. */
+export async function openCode(anchors: CodeAnchors, site: AnchorSite): Promise<void> {
+	const failure = await shell.openPath(path.join(anchors.root, ...site.file.split('/')));
+	if (failure !== '') new Notice(`${site.file} could not be opened: ${failure}`);
 }
