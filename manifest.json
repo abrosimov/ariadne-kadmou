@@ -1,7 +1,7 @@
 {
 	"id": "ariadne-kadmou",
 	"name": "Ariadne kadmou",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"minAppVersion": "1.8.7",
 	"description": "Navigation for kadmos vaults: kadmos:// references across instances and code anchors, with findings from the Lynkeus validator.",
 	"author": "abrosimov",

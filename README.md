@@ -47,17 +47,11 @@ the desktop.
 the GitHub releases of a repository and keeps them updated.
 
 1. In **Settings → Community plugins**, install and enable **BRAT**.
-2. While this repository is private, give BRAT a GitHub token that can read it: a
-   fine-grained personal access token for `abrosimov/ariadne-kadmou` with **Contents:
-   Read**, entered in BRAT's settings.
-3. Run **BRAT: Add a beta plugin for testing**, enter `abrosimov/ariadne-kadmou`, choose a
+2. Run **BRAT: Add a beta plugin for testing**, enter `abrosimov/ariadne-kadmou`, choose a
    version, and enable **Ariadne kadmou** in **Settings → Community plugins**.
 
-BRAT sees published releases only. The release workflow creates a draft for each tag;
-publish the draft to make it installable.
-
 **By hand.** Copy `main.js`, `manifest.json` and `styles.css` from a release, or from
-`npm run build`, into `<vault>/.obsidian/plugins/ariadne-kadmou/`, then enable the plugin
+`task build`, into `<vault>/.obsidian/plugins/ariadne-kadmou/`, then enable the plugin
 in **Settings → Community plugins**.
 
 ## Still to come
@@ -70,17 +64,18 @@ The contract Ariadne follows is fixed in kadmos: `standards/cross-instance-refer
 
 ## Development
 
-Node.js 22.18 or later, for the type stripping the tests run on; npm, esbuild.
+Node.js 22.18 or later, for the type stripping the tests run on. pnpm comes through
+Corepack at the version `packageManager` pins, and [Task](https://taskfile.dev) is a dev
+dependency, so `pnpm exec task` needs nothing installed globally. `pnpm-workspace.yaml`
+names the only dependencies whose install scripts may run.
 
 ```bash
-npm install
-npm run dev      # watch build of src/main.ts into main.js
-npm run build    # production build
-npm run format   # Prettier
-npm run typecheck
-npm run lint     # fails on any warning
-npm test         # node:test over test/ with the kadmos conformance vectors; src/core/ must stay fully covered
-npm run e2e      # builds, then runs test/e2e/ in real Obsidian
+corepack enable
+pnpm install
+pnpm exec task --list   # every command, from Taskfile.yml
+pnpm exec task dev      # watch build of src/main.ts into main.js
+pnpm exec task check    # format, lint, unit tests with the coverage gate, typecheck, build
+pnpm exec task e2e      # builds, then runs test/e2e/ in real Obsidian
 ```
 
 End-to-end tests run through WebdriverIO and `wdio-obsidian-service`, which downloads
@@ -91,7 +86,7 @@ from each other. They run on the plugin's `minAppVersion` with its oldest instal
 release. `minAppVersion` equals the version of the `obsidian` API package the plugin
 compiles against, so no newer API can slip in unnoticed.
 
-CI runs `format:check`, `typecheck`, `lint`, `test` and `build`; any finding fails it.
+CI runs `task check` on Node 22 and 24 and `task e2e`; any finding fails it.
 Lint is typescript-eslint `strictTypeChecked` and `stylisticTypeChecked`, unicorn, the
 Obsidian rules and a set of stricter rules on top, with no rule about comments or layout:
 layout belongs to Prettier. Every dev dependency is pinned to an exact version.
@@ -103,6 +98,8 @@ copying again, never by editing a vector.
 
 ## Releasing
 
-Bump `manifest.json` and `versions.json` as the Obsidian plugin guidelines describe,
-tag the exact version without a `v` prefix, and attach `main.js`, `manifest.json` and
-`styles.css` to the GitHub release.
+`pnpm exec task version -- x.y.z` sets the version in `package.json` and `manifest.json`
+and records the minimum Obsidian version in `versions.json`. Commit it, and push a tag
+named exactly `x.y.z`, without a `v`: the release workflow checks that the tag matches
+the manifest, runs `task check`, and publishes a release with `main.js`, `manifest.json`
+and `styles.css`, which BRAT then offers.

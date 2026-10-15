@@ -1,0 +1,61 @@
+# Every command of the project. Run with `pnpm exec task <name>`; `task --list` names them.
+version: '3'
+
+vars:
+    BIN: '{{.ROOT_DIR}}/node_modules/.bin'
+    TEST_COVERAGE: >-
+        --experimental-test-coverage --test-coverage-include="src/core/**"
+        --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=95
+
+tasks:
+    install:
+        desc: Install the locked dependencies
+        cmd: pnpm install --frozen-lockfile
+
+    dev:
+        desc: Rebuild main.js on every change
+        cmd: node esbuild.config.mjs
+
+    build:
+        desc: Typecheck and build main.js for production
+        deps: [typecheck]
+        cmd: node esbuild.config.mjs production
+
+    format:
+        desc: Format every file
+        cmd: '"{{.BIN}}/prettier" --write .'
+
+    format:check:
+        desc: Fail on any unformatted file
+        cmd: '"{{.BIN}}/prettier" --check .'
+
+    typecheck:
+        desc: Typecheck the plugin, its tests and the end-to-end specs
+        cmds:
+            - '"{{.BIN}}/tsc" --noEmit'
+            - '"{{.BIN}}/tsc" --noEmit -p test/e2e'
+
+    lint:
+        desc: Lint, failing on any warning
+        cmd: '"{{.BIN}}/eslint" . --max-warnings 0'
+
+    test:
+        desc: Unit tests with the kadmos conformance vectors; src/core must stay covered
+        cmd: node --test {{.TEST_COVERAGE}} "test/**/*.test.ts"
+
+    e2e:
+        desc: Build, then run the end-to-end tests in real Obsidian
+        deps: [build]
+        cmd: '"{{.BIN}}/wdio" run ./wdio.conf.mts'
+
+    check:
+        desc: Everything CI checks except the end-to-end tests
+        cmds:
+            - task: format:check
+            - task: lint
+            - task: test
+            - task: build
+
+    version:
+        desc: 'Set the plugin version, for example: task version -- 0.2.0'
+        cmd: node version-bump.mjs {{.CLI_ARGS}}

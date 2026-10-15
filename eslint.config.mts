@@ -18,7 +18,9 @@ export default defineConfig(
 		'version-bump.mjs',
 		'versions.json',
 		'package.json',
-		'package-lock.json',
+		'pnpm-lock.yaml',
+		'pnpm-workspace.yaml',
+		'Taskfile.yml',
 		'tsconfig.json',
 	]),
 	{
