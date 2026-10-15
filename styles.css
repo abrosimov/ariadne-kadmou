@@ -1,0 +1,22 @@
+/* kadmos:// links, by resolution status. */
+.ariadne-kadmou-link.is-stale,
+.ariadne-kadmou-link.is-renamed {
+	text-decoration-style: wavy;
+	text-decoration-color: var(--text-warning);
+}
+
+.ariadne-kadmou-link.is-missing,
+.ariadne-kadmou-link.is-invalid,
+.ariadne-kadmou-link.is-foreign {
+	text-decoration-style: wavy;
+	text-decoration-color: var(--text-error);
+}
+
+.ariadne-kadmou-link.is-missing,
+.ariadne-kadmou-link.is-invalid {
+	color: var(--text-error);
+}
+
+.ariadne-kadmou-link.is-unchecked {
+	text-decoration-style: dotted;
+}

@@ -7,12 +7,14 @@ the vault's own notes, follows code anchors declared as
 `ariadne-kadmou[<slug>|<relation>|<reference>]` in source and model files, and shows the
 findings of Lynkeus, the kadmos validator, on the notes they concern.
 
-Status: pre-alpha. The plugin locates the kadmos vault by its markers and reads its
-contract from the root schema; the parsers and the resolver below it reproduce the kadmos
-conformance vectors, and nothing is shown in notes yet. The specification will live in this
-repository as a kadmos vault, in the child its root `.vault-root` names, with a dependency
-on `kadmos`, so that the plugin's own documentation is the first consumer of the
-mechanisms it navigates.
+Status: pre-alpha. In the kadmos vault its markers locate, Ariadne marks every
+`kadmos://oikos/...` link in reading view and in the editor with its resolution
+(resolved, stale, renamed, missing, invalid, or naming an undeclared vault), follows it
+on a click, offers its target to the page preview, and completes a reference after
+`kadmos://`. Code anchors, dependencies and Lynkeus findings are still to come. The
+specification will live in this repository as a kadmos vault, in the child its root
+`.vault-root` names, with a dependency on `kadmos`, so that the plugin's own documentation
+is the first consumer of the mechanisms it navigates.
 
 Ariadne finds the kadmos vault only where the markers put it: a `.vault-profile` at the
 root of the opened folder makes that folder the vault, a `.vault-root` there names the
@@ -44,12 +46,14 @@ npm run format   # Prettier
 npm run typecheck
 npm run lint     # fails on any warning
 npm test         # node:test over test/, including the kadmos conformance vectors
-npm run e2e      # builds, then runs test/e2e/ in real Obsidian (on Linux without a display: xvfb-run -a npm run e2e)
+npm run e2e      # builds, then runs test/e2e/ in real Obsidian
 ```
 
 End-to-end tests run through WebdriverIO and `wdio-obsidian-service`, which downloads
 Obsidian into `.obsidian-cache/` and opens each vault under `test/e2e/vaults/` in a sandbox.
-They run on the plugin's `minAppVersion` with its oldest installer and on the latest
+On Linux without a display, WebdriverIO starts a virtual display per worker; do not wrap
+the run in `xvfb-run`, or parallel Obsidian windows share one display and take focus
+from each other. They run on the plugin's `minAppVersion` with its oldest installer and on the latest
 release. `minAppVersion` equals the version of the `obsidian` API package the plugin
 compiles against, so no newer API can slip in unnoticed.
 

@@ -21,4 +21,6 @@ jobs:
               with:
                   path: .obsidian-cache
                   key: obsidian-${{ hashFiles('manifest.json', 'package-lock.json') }}
-            - run: xvfb-run --auto-servernum npm run e2e
+            # Without a DISPLAY, WebdriverIO gives each worker its own virtual display,
+            # so parallel Obsidian windows do not take focus from one another.
+            - run: npm run e2e

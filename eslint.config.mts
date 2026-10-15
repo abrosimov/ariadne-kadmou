@@ -117,5 +117,10 @@ export default defineConfig(
 			'unicorn/filename-case': ['error', { case: 'kebabCase' }],
 		},
 	},
+	{
+		// End-to-end specs run their callbacks in Obsidian's window, where `window` is the global.
+		files: ['test/e2e/**/*.ts'],
+		rules: { 'unicorn/prefer-global-this': 'off' },
+	},
 	prettier,
 );

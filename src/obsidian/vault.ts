@@ -2,8 +2,8 @@
 // root schema declare it.
 
 import { type App, normalizePath } from 'obsidian';
-import { ContractError, SCHEMA_FILE, type VaultContract, parseContract } from './core/contract.ts';
-import { type MarkerReader, locateVault } from './core/vault-location.ts';
+import { ContractError, SCHEMA_FILE, type VaultContract, parseContract } from '../core/contract.ts';
+import { type MarkerReader, locateVault } from '../core/vault-location.ts';
 
 export type KadmosVault =
 	| {
