@@ -16,7 +16,9 @@ jobs:
                   path: |
                       .hermetic/cache
                       .hermetic/stacks/node/pnpm-store
-                  key: hermetic-${{ hashFiles('pins.env', 'pnpm-lock.yaml') }}
+                      .hermetic/stacks/node/corepack
+                      .hermetic/xdg-cache
+                  key: hermetic-${{ hashFiles('pins.env', 'package.json', 'pnpm-lock.yaml') }}
             # Installs the pinned Node and Task below .hermetic/, then task install.
             - run: ./bin/bootstrap.sh
             - run: .hermetic/stacks/node/bin/task check

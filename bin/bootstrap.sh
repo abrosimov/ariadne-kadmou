@@ -85,15 +85,18 @@ TASK_VERSION=$(pin TASK_VERSION)
 NODE_SHA256=$(digest "NODE_SHA256_${OS}_${ARCH}")
 TASK_SHA256=$(digest "TASK_SHA256_${OS}_${ARCH}")
 
-mkdir -p "$TOOLCHAIN_DIR" "$BIN_DIR" "$CACHE_DIR"
+mkdir -p "$BIN_DIR" "$CACHE_DIR"
 
 if [ "$("$TOOLCHAIN_DIR/bin/node" --version 2>/dev/null || true)" = "$NODE_VERSION" ]; then
 	echo "bootstrap: Node $NODE_VERSION already installed"
 else
 	archive="node-$NODE_VERSION-$OS-$NODE_ARCH.tar.gz"
 	fetch "https://nodejs.org/dist/$NODE_VERSION/$archive" "$CACHE_DIR/$archive" "$NODE_SHA256"
-	rm -rf "${TOOLCHAIN_DIR:?}"/*
-	tar -xzf "$CACHE_DIR/$archive" -C "$TOOLCHAIN_DIR" --strip-components=1
+	# Extract aside and move into place, so an interrupted extraction never passes for an install.
+	unpack="$STACK/toolchain.unpack"
+	rm -rf "$unpack" && mkdir -p "$unpack"
+	tar -xzf "$CACHE_DIR/$archive" -C "$unpack" --strip-components=1
+	rm -rf "$TOOLCHAIN_DIR" && mv "$unpack" "$TOOLCHAIN_DIR"
 fi
 
 if [ "$("$BIN_DIR/task" --version 2>/dev/null | awk 'NR==1 {print $NF}' || true)" = "${TASK_VERSION#v}" ]; then
@@ -102,7 +105,8 @@ else
 	archive="task_${TASK_VERSION#v}_${OS}_${ARCH}.tar.gz"
 	fetch "https://github.com/go-task/task/releases/download/$TASK_VERSION/task_${OS}_${ARCH}.tar.gz" \
 		"$CACHE_DIR/$archive" "$TASK_SHA256"
-	tar -xzf "$CACHE_DIR/$archive" -C "$BIN_DIR" task
+	tar -xzf "$CACHE_DIR/$archive" -C "$CACHE_DIR" task
+	mv "$CACHE_DIR/task" "$BIN_DIR/task"
 fi
 
 echo "bootstrap: running task install"

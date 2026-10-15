@@ -23,3 +23,5 @@ data.json
 
 # Pinned toolchains, caches and package files, see bin/bootstrap.sh
 .hermetic/
+# The former location of the end-to-end downloads, still present in older clones
+.obsidian-cache/

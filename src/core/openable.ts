@@ -2,7 +2,8 @@
 // application: sources and data that no common default application runs.
 // Anything else is not opened. Scripts are absent on purpose (`.js` runs under
 // Windows Script Host, `.py` under the Python launcher, `.command` in macOS
-// Terminal), as are pages and archives a browser or runtime would execute.
+// Terminal, `.exs` and `.kts` by name), as are pages and archives a browser or
+// runtime would execute, and data a spreadsheet evaluates (`.csv`, `.xml`).
 const OPENABLE = new Set([
 	'c',
 	'cc',
@@ -11,25 +12,20 @@ const OPENABLE = new Set([
 	'cpp',
 	'cs',
 	'css',
-	'csv',
 	'cts',
 	'cue',
 	'dart',
 	'ex',
-	'exs',
 	'go',
-	'gradle',
 	'graphql',
 	'h',
 	'hcl',
 	'hpp',
-	'hs',
 	'ini',
 	'java',
 	'json',
 	'jsonc',
 	'kt',
-	'kts',
 	'less',
 	'md',
 	'ml',
@@ -48,7 +44,6 @@ const OPENABLE = new Set([
 	'tsx',
 	'txt',
 	'txtpb',
-	'xml',
 	'yaml',
 	'yml',
 	'zig',

@@ -7,8 +7,6 @@ allowBuilds:
     esbuild: true
     # obsidian-launcher's LevelDB binding, used to prepare Obsidian's storage in end-to-end tests.
     classic-level: true
-    # The Go Task binary behind Taskfile.yml.
-    '@go-task/cli': true
     # WebdriverIO drivers for browsers these tests never start.
     edgedriver: false
     geckodriver: false
