@@ -14,20 +14,15 @@ jobs:
             attestations: write
         steps:
             - uses: actions/checkout@v6
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 24.x
-                  cache: 'pnpm'
-            - run: pnpm install --frozen-lockfile
+            - run: ./bin/bootstrap.sh
 
             - name: The tag names the manifest version
               run: |
                   tag="${GITHUB_REF#refs/tags/}"
-                  version="$(node -p "require('./manifest.json').version")"
+                  version="$(.hermetic/stacks/node/toolchain/bin/node -p "require('./manifest.json').version")"
                   [ "$tag" = "$version" ] || { echo "tag $tag differs from manifest version $version"; exit 1; }
 
-            - run: pnpm exec task check
+            - run: .hermetic/stacks/node/bin/task check
 
             - name: Attest build provenance
               uses: actions/attest@v4

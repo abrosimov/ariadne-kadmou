@@ -9,18 +9,14 @@ on:
 jobs:
     check:
         runs-on: ubuntu-latest
-
-        strategy:
-            matrix:
-                # Tests run TypeScript through Node's type stripping, which Node 20 lacks.
-                node-version: [22.x, 24.x]
-
         steps:
             - uses: actions/checkout@v6
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
+            - uses: actions/cache@v4
               with:
-                  node-version: ${{ matrix.node-version }}
-                  cache: 'pnpm'
-            - run: pnpm install --frozen-lockfile
-            - run: pnpm exec task check
+                  path: |
+                      .hermetic/cache
+                      .hermetic/stacks/node/pnpm-store
+                  key: hermetic-${{ hashFiles('pins.env', 'pnpm-lock.yaml') }}
+            # Installs the pinned Node and Task below .hermetic/, then task install.
+            - run: ./bin/bootstrap.sh
+            - run: .hermetic/stacks/node/bin/task check

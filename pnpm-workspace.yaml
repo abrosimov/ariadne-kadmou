@@ -1,3 +1,7 @@
+# The store and the package files live under .hermetic/; node_modules/ holds only links into them.
+storeDir: .hermetic/stacks/node/pnpm-store
+virtualStoreDir: .hermetic/stacks/node/pnpm-packages
+
 # Dependencies whose install scripts may run. Everything else installs without running code.
 allowBuilds:
     esbuild: true

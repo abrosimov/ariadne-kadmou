@@ -8,6 +8,7 @@ import { shell } from 'electron';
 import { type App, FileSystemAdapter, Notice } from 'obsidian';
 import { type AnchorIndex, type AnchorSite, indexAnchors } from '../core/anchor-index.ts';
 import type { VaultContract } from '../core/contract.ts';
+import { isOpenable } from '../core/openable.ts';
 import { filesMentioning, type SourceCache } from '../core/source-scan.ts';
 
 export interface CodeAnchors {
@@ -35,8 +36,12 @@ export async function scanCodeAnchors(
 	return { root, index: indexAnchors(files, { ...contract, codeAnchors }), cache };
 }
 
-/** Opens the code at an anchor with the operating system's default application. */
+/**
+ * Opens the code at an anchor with the operating system's default application,
+ * if its type is on the list of those that application does not run.
+ */
 export async function openCode(anchors: CodeAnchors, site: AnchorSite): Promise<void> {
+	if (!isOpenable(site.file)) return;
 	const failure = await shell.openPath(path.join(anchors.root, ...site.file.split('/'))).catch(String);
 	if (failure !== '') new Notice(`${site.file} could not be opened: ${failure}`);
 }

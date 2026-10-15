@@ -12,6 +12,7 @@ import tseslint from 'typescript-eslint';
 export default defineConfig(
 	globalIgnores([
 		'node_modules',
+		'.hermetic',
 		'dist',
 		'main.js',
 		'esbuild.config.mjs',

@@ -21,5 +21,5 @@ data.json
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 
-# wdio-obsidian-service downloads
-.obsidian-cache
+# Pinned toolchains, caches and package files, see bin/bootstrap.sh
+.hermetic/

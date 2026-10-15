@@ -24,7 +24,9 @@ the child that is. Without either Ariadne stays idle.
   vault itself, anchors are reported as not checked. The walk honours `.gitignore` files and skips the
   vault, dot-entries, `node_modules`, symbolic links, binaries and files over 1 MiB.
   `kadmos://oikos/#<slug>` resolves to the one declaration of that slug and opens its file
-  with the application the operating system assigns to it. **Show code anchors of this
+  with the application the operating system assigns to it, but only for sources and data on
+  an allowlist (`src/core/openable.ts`); scripts and anything else that a default
+  application would run are not opened. **Show code anchors of this
   note** lists the anchors naming the note and what is wrong with its `anchored_by`. The
   scan reruns when Obsidian regains focus, reading only files that changed, and on
   **Rescan code anchors**; malformed declarations are listed on the status bar item.
@@ -64,29 +66,38 @@ The contract Ariadne follows is fixed in kadmos: `standards/cross-instance-refer
 
 ## Development
 
-Node.js 22.18 or later, for the type stripping the tests run on. pnpm comes through
-Corepack at the version `packageManager` pins, and [Task](https://taskfile.dev) is a dev
-dependency, so `pnpm exec task` needs nothing installed globally. `pnpm-workspace.yaml`
-names the only dependencies whose install scripts may run.
+The toolchain is hermetic, after go-core: everything path-valued lives under `.hermetic/`,
+which Git ignores.
+
+- `pins.env` pins Node and Task with the SHA256 of each published archive.
+- `packageManager` in `package.json` pins pnpm with its digest, which Corepack enforces.
+- `bin/bootstrap.sh` needs only bash, curl, tar and sha256sum or shasum. It installs Node
+  and Task below `.hermetic/stacks/node/` and runs `task install`, which brings pnpm and
+  the locked dependencies.
+- pnpm keeps its store and the package files below `.hermetic/` too; `node_modules/`
+  holds only links.
+- `Taskfile.yml` points Corepack, the npm and XDG caches and the Obsidian downloads there
+  as well. The committed `.taskrc.yml` makes those settings win over the caller's shell.
+- `pnpm-workspace.yaml` names the only dependencies whose install scripts may run.
 
 ```bash
-corepack enable
-pnpm install
-pnpm exec task --list   # every command, from Taskfile.yml
-pnpm exec task dev      # watch build of src/main.ts into main.js
-pnpm exec task check    # format, lint, unit tests with the coverage gate, typecheck, build
-pnpm exec task e2e      # builds, then runs test/e2e/ in real Obsidian
+./bin/bootstrap.sh                       # once per clone, and after a pin moves
+T=.hermetic/stacks/node/bin/task
+$T --list                                # every command, from Taskfile.yml
+$T dev                                   # watch build of src/main.ts into main.js
+$T check                                 # format, lint, unit tests with the coverage gate, typecheck, build
+$T e2e                                   # builds, then runs test/e2e/ in real Obsidian
 ```
 
 End-to-end tests run through WebdriverIO and `wdio-obsidian-service`, which downloads
-Obsidian into `.obsidian-cache/` and opens each vault under `test/e2e/vaults/` in a sandbox.
+Obsidian into `.hermetic/stacks/node/obsidian-cache/` and opens each vault under `test/e2e/vaults/` in a sandbox.
 On Linux without a display, WebdriverIO starts a virtual display per worker; do not wrap
 the run in `xvfb-run`, or parallel Obsidian windows share one display and take focus
 from each other. They run on the plugin's `minAppVersion` with its oldest installer and on the latest
 release. `minAppVersion` equals the version of the `obsidian` API package the plugin
 compiles against, so no newer API can slip in unnoticed.
 
-CI runs `task check` on Node 22 and 24 and `task e2e`; any finding fails it.
+CI bootstraps the same way and runs `task check` and `task e2e`; any finding fails it.
 Lint is typescript-eslint `strictTypeChecked` and `stylisticTypeChecked`, unicorn, the
 Obsidian rules and a set of stricter rules on top, with no rule about comments or layout:
 layout belongs to Prettier. Every dev dependency is pinned to an exact version.
@@ -98,7 +109,7 @@ copying again, never by editing a vector.
 
 ## Releasing
 
-`pnpm exec task version -- x.y.z` sets the version in `package.json` and `manifest.json`
+`task version -- x.y.z` sets the version in `package.json` and `manifest.json`
 and records the minimum Obsidian version in `versions.json`. Commit it, and push a tag
 named exactly `x.y.z`, without a `v`: the release workflow checks that the tag matches
 the manifest, runs `task check`, and publishes a release with `main.js`, `manifest.json`

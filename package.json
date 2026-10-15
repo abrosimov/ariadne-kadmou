@@ -11,7 +11,6 @@
 		"@codemirror/state": "6.5.0",
 		"@codemirror/view": "6.38.6",
 		"@eslint/js": "9.39.4",
-		"@go-task/cli": "3.54.0",
 		"@types/mocha": "10.0.10",
 		"@types/node": "22.19.17",
 		"@wdio/cli": "9.32.0",
@@ -41,5 +40,5 @@
 	"dependencies": {
 		"ignore": "7.0.12"
 	},
-	"packageManager": "pnpm@12.11.2"
+	"packageManager": "pnpm@12.11.2+sha512.25a51652a196785af5f28bda6dfe8dc582ebefa4ac1d180221ce1390231c5fb76637822ea4b6e4633ce74acdcb0a77f725af11bad38177fdeddaee818a955cb9"
 }

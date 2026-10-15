@@ -1,16 +1,39 @@
-# Every command of the project. Run with `pnpm exec task <name>`; `task --list` names them.
+# Every command of the project. A fresh clone runs ./bin/bootstrap.sh once; after that,
+# .hermetic/stacks/node/bin/task <name>, or `task --list` for the names.
 version: '3'
 
+# Path-valued state lives under .hermetic/, which Git ignores: the pinned Node and Task,
+# Corepack's pnpm, the pnpm store and package files, caches and the Obsidian downloads.
+env:
+    PATH: '{{.ROOT_DIR}}/.hermetic/stacks/node/bin:{{.ROOT_DIR}}/.hermetic/stacks/node/toolchain/bin:{{.PATH}}'
+    COREPACK_HOME: '{{.ROOT_DIR}}/.hermetic/stacks/node/corepack'
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    COREPACK_ENABLE_STRICT: '1'
+    npm_config_cache: '{{.ROOT_DIR}}/.hermetic/stacks/node/npm-cache'
+    XDG_CACHE_HOME: '{{.ROOT_DIR}}/.hermetic/xdg-cache'
+
 vars:
+    STACK: '{{.ROOT_DIR}}/.hermetic/stacks/node'
     BIN: '{{.ROOT_DIR}}/node_modules/.bin'
     TEST_COVERAGE: >-
         --experimental-test-coverage --test-coverage-include="src/core/**"
         --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=95
+    # Evaluated before any task: without ENV_PRECEDENCE the caller's shell would win over env above.
+    _ENV_PRECEDENCE_GUARD:
+        sh: |
+            grep -qE '^[[:space:]]*ENV_PRECEDENCE:[[:space:]]*1[[:space:]]*$' "{{.ROOT_DIR}}/.taskrc.yml" || {
+              echo "ERROR: .taskrc.yml must enable 'ENV_PRECEDENCE: 1' under experiments." >&2
+              exit 1
+            }
+            echo ok
 
 tasks:
     install:
-        desc: Install the locked dependencies
-        cmd: pnpm install --frozen-lockfile
+        desc: Install everything the tasks need, below .hermetic/; bootstrap runs it on a fresh clone
+        cmds:
+            - mkdir -p "{{.STACK}}/bin" "{{.STACK}}/corepack" "{{.ROOT_DIR}}/.hermetic/xdg-cache"
+            - corepack enable --install-directory "{{.STACK}}/bin" pnpm
+            - pnpm install --frozen-lockfile
 
     dev:
         desc: Rebuild main.js on every change

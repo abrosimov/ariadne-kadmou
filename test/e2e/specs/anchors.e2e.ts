@@ -20,7 +20,7 @@ describe('code anchors', () => {
 		});
 
 		it('counts the declarations and reports a malformed one', async () => {
-			await browser.waitUntil(async () => (await anchorCount()) === '3');
+			await browser.waitUntil(async () => (await anchorCount()) === '4');
 			expect(await $(STATUS).getAttribute('aria-label')).toContain(
 				'src/store.go:9 "realises" is not a declared relation',
 			);
@@ -32,10 +32,11 @@ describe('code anchors', () => {
 				'put anchor': 'resolved',
 				'absent anchor': 'missing',
 				'twice anchor': 'invalid',
+				'script anchor': 'resolved',
 			});
 		});
 
-		it('opens the code at the anchor with the default application', async () => {
+		it('opens an allowed file type with the default application, and nothing else', async () => {
 			await browser.executeObsidian(({ require }) => {
 				const opened: string[] = [];
 				Object.assign(window, { openedPaths: opened });
@@ -48,12 +49,15 @@ describe('code anchors', () => {
 				};
 			});
 			await open(NOTE, 'reading');
+			await clickLink('.markdown-reading-view', 'script anchor');
 			await clickLink('.markdown-reading-view', 'put anchor');
 			let opened: string[] = [];
 			await browser.waitUntil(async () => {
 				opened = await recorded('openedPaths');
 				return opened.length === 1;
 			});
+			// The shell script, clicked first, was not opened.
+			expect(opened).toHaveLength(1);
 			expect(opened[0]).toMatch(/[/\\]src[/\\]store\.go$/u);
 			await browser.execute(() => {
 				(window as unknown as { restoreOpenPath: () => void }).restoreOpenPath();
@@ -68,7 +72,9 @@ describe('code anchors', () => {
 			for (const item of items) labels.push(await item.getText());
 			expect(labels).toEqual([
 				'"ghost" is listed but declared nowhere',
+				'"build-script" names this note but is not listed',
 				'"twice" names this note but is not listed',
+				'build-script · implements · scripts/build.sh:2',
 				'store-put · implements · src/store.go:3',
 				'twice · implements · src/store.go:6',
 				'twice · tests · test/store_test.go:3',
@@ -85,7 +91,7 @@ describe('code anchors', () => {
 			});
 			await browser.pause(2100);
 			await browser.execute(() => window.dispatchEvent(new Event('focus')));
-			await browser.waitUntil(async () => (await anchorCount()) === '4');
+			await browser.waitUntil(async () => (await anchorCount()) === '5');
 			await open(NOTE, 'reading');
 			await browser.waitUntil(async () => {
 				const marks = await statuses('.workspace-leaf.mod-active .markdown-reading-view a[data-kadmos-status]');

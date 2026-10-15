@@ -8,3 +8,4 @@ anchored_by:
 - [put anchor](kadmos://oikos/#store-put)
 - [absent anchor](kadmos://oikos/#absent)
 - [twice anchor](kadmos://oikos/#twice)
+- [script anchor](kadmos://oikos/#build-script)

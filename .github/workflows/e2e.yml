@@ -12,16 +12,14 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 24.x
-                  cache: 'pnpm'
-            - run: pnpm install --frozen-lockfile
             - uses: actions/cache@v4
               with:
-                  path: .obsidian-cache
-                  key: obsidian-${{ hashFiles('manifest.json', 'pnpm-lock.yaml') }}
+                  path: |
+                      .hermetic/cache
+                      .hermetic/stacks/node/pnpm-store
+                      .hermetic/stacks/node/obsidian-cache
+                  key: hermetic-e2e-${{ hashFiles('pins.env', 'pnpm-lock.yaml', 'manifest.json') }}
+            - run: ./bin/bootstrap.sh
             # Without a DISPLAY, WebdriverIO gives each worker its own virtual display,
             # so parallel Obsidian windows do not take focus from one another.
-            - run: pnpm exec task e2e
+            - run: .hermetic/stacks/node/bin/task e2e

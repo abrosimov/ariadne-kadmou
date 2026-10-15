@@ -2,4 +2,4 @@ main.js
 pnpm-lock.yaml
 test/vectors/
 test/e2e/vaults/
-.obsidian-cache/
+.hermetic/

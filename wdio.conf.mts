@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { Capabilities, Options } from '@wdio/types';
 import type { ObsidianCapabilityOptions } from 'wdio-obsidian-service';
 
-const cacheDir = path.resolve('.obsidian-cache');
+const cacheDir = path.resolve('.hermetic/stacks/node/obsidian-cache');
 
 // The plugin's minAppVersion on the oldest installer that runs it, and the
 // latest release on the latest installer.
