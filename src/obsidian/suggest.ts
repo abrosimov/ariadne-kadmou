@@ -11,12 +11,12 @@ import {
 import { type Completion, complete, DEFAULT_AUTHORITIES } from '../core/completion.ts';
 import { referencePrefixAt } from '../core/link-scan.ts';
 import { OIKOS } from '../core/reference.ts';
-import type { NoteIndex } from './note-index.ts';
+import type { KadmosIndex } from './kadmos-index.ts';
 
 export class ReferenceSuggest extends EditorSuggest<Completion> {
-	private readonly index: () => NoteIndex | undefined;
+	private readonly index: () => KadmosIndex | undefined;
 
-	constructor(app: App, index: () => NoteIndex | undefined) {
+	constructor(app: App, index: () => KadmosIndex | undefined) {
 		super(app);
 		this.index = index;
 	}
@@ -35,6 +35,7 @@ export class ReferenceSuggest extends EditorSuggest<Completion> {
 			authorities: DEFAULT_AUTHORITIES,
 			notes: (authority) => (authority === OIKOS ? index.activeNotes() : []),
 			headings: (authority, path) => (authority === OIKOS ? index.headings(path) : []),
+			anchors: (authority) => (authority === OIKOS ? [...(index.anchors?.index.sites.keys() ?? [])] : []),
 		});
 	}
 

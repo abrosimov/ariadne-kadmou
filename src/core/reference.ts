@@ -4,6 +4,7 @@
 //   kadmos://<authority>/#<slug>               a code anchor
 
 import type { VaultContract } from './contract.ts';
+import { fail, ok, type Result } from './result.ts';
 
 export const SCHEME = 'kadmos://';
 export const OIKOS = 'oikos';
@@ -25,8 +26,6 @@ export interface AnchorReference {
 
 export type KadmosReference = NoteReference | AnchorReference;
 
-export type ParseResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: string };
-
 type GrammarContract = Pick<VaultContract, 'retentionRoots'> & {
 	readonly codeAnchors?: { readonly slugPattern: RegExp };
 };
@@ -35,7 +34,7 @@ type GrammarContract = Pick<VaultContract, 'retentionRoots'> & {
 // fragments; line numbers are not addresses.
 const LINE_ADDRESS = /^L\d+(?:-L?\d+)?$/u;
 
-export function parseReference(uri: string, contract: GrammarContract): ParseResult<KadmosReference> {
+export function parseReference(uri: string, contract: GrammarContract): Result<KadmosReference> {
 	if (!uri.startsWith(SCHEME)) return fail(`not a ${SCHEME} reference`);
 	const rest = uri.slice(SCHEME.length);
 	if (/[\s?]/u.test(rest)) return fail('a reference contains no whitespace and no query');
@@ -57,7 +56,7 @@ export function parseReference(uri: string, contract: GrammarContract): ParseRes
 		if (!contract.codeAnchors.slugPattern.test(rawFragment)) {
 			return fail(`"${rawFragment}" does not match the declared slug pattern`);
 		}
-		return { ok: true, value: { kind: 'anchor', authority, slug: rawFragment } };
+		return ok({ kind: 'anchor', authority, slug: rawFragment });
 	}
 
 	const path = decode(rawPath);
@@ -72,12 +71,12 @@ export function parseReference(uri: string, contract: GrammarContract): ParseRes
 		return fail(`"${first}/" is a retention root; a reference names the active path`);
 	}
 
-	if (rawFragment === undefined) return { ok: true, value: { kind: 'note', authority, path } };
+	if (rawFragment === undefined) return ok({ kind: 'note', authority, path });
 	const fragment = decode(rawFragment);
 	if (fragment === undefined || fragment === '') return fail('the heading is empty or not validly percent-encoded');
 	if (fragment.includes('#')) return fail('a reference carries one fragment');
 	if (LINE_ADDRESS.test(fragment)) return fail('line numbers are not addresses');
-	return { ok: true, value: { kind: 'note', authority, path, fragment } };
+	return ok({ kind: 'note', authority, path, fragment });
 }
 
 export function formatReference(reference: KadmosReference): string {
@@ -93,8 +92,4 @@ function decode(text: string): string | undefined {
 	} catch {
 		return undefined;
 	}
-}
-
-function fail(reason: string): ParseResult<never> {
-	return { ok: false, reason };
 }

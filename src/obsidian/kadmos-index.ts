@@ -1,12 +1,13 @@
-// The notes of the kadmos vault as Obsidian sees them, keyed by their path
+// The notes of the kadmos vault as Obsidian sees them, and the code anchors of its repository, keyed by their path
 // relative to the kadmos vault root. The note population follows the
 // contract's validation scope; headings come from the metadata cache.
 
 import { type App, TFile } from 'obsidian';
 import type { VaultContract } from '../core/contract.ts';
+import type { CodeAnchors } from './code-anchors.ts';
 import { type VaultView, vaultFromFiles } from '../core/resolve.ts';
 
-export class NoteIndex {
+export class KadmosIndex {
 	private view: VaultView | undefined;
 	private active: readonly string[] | undefined;
 
@@ -14,6 +15,8 @@ export class NoteIndex {
 	/** The kadmos vault folder relative to the Obsidian vault root; '' for the root. */
 	readonly root: string;
 	readonly contract: VaultContract;
+	/** The repository's code anchors once scanned; undefined when they cannot be. */
+	anchors: CodeAnchors | undefined;
 
 	constructor(app: App, root: string, contract: VaultContract) {
 		this.app = app;
@@ -46,10 +49,25 @@ export class NoteIndex {
 		return (this.app.metadataCache.getFileCache(file)?.headings ?? []).map((heading) => heading.heading);
 	}
 
+	/** The note's `anchored_by` list, or undefined when it has none. */
+	anchoredBy(path: string): string[] | undefined {
+		const field = this.contract.codeAnchors?.reverseField;
+		const file = this.file(path);
+		if (field === undefined || file === undefined) return undefined;
+		const listed: unknown = this.app.metadataCache.getFileCache(file)?.frontmatter?.[field];
+		return Array.isArray(listed) ? listed.map(String) : undefined;
+	}
+
 	/** The Obsidian file of a vault-relative note path. */
 	file(path: string): TFile | undefined {
 		const file = this.app.vault.getAbstractFileByPath(this.obsidianPath(path));
 		return file instanceof TFile ? file : undefined;
+	}
+
+	/** The vault-relative path of an Obsidian path inside the vault, else undefined. */
+	notePath(obsidianPath: string): string | undefined {
+		if (this.root === '') return obsidianPath;
+		return obsidianPath.startsWith(`${this.root}/`) ? obsidianPath.slice(this.root.length + 1) : undefined;
 	}
 
 	obsidianPath(path: string): string {

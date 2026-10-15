@@ -108,6 +108,9 @@ export default defineConfig(
 				},
 			],
 
+			// The declarative settings API needs Obsidian 1.13; minAppVersion is 1.8.7.
+			'obsidianmd/settings-tab/prefer-setting-definitions': 'off',
+
 			// Unicorn: taste, not correctness.
 			'unicorn/prevent-abbreviations': 'off',
 			'unicorn/no-null': 'off',

@@ -7,29 +7,31 @@ the vault's own notes, follows code anchors declared as
 `ariadne-kadmou[<slug>|<relation>|<reference>]` in source and model files, and shows the
 findings of Lynkeus, the kadmos validator, on the notes they concern.
 
-Status: pre-alpha. In the kadmos vault its markers locate, Ariadne marks every
-`kadmos://oikos/...` link in reading view and in the editor with its resolution
-(resolved, stale, renamed, missing, invalid, or naming an undeclared vault), follows it
-on a click, offers its target to the page preview, and completes a reference after
-`kadmos://`. Code anchors, dependencies and Lynkeus findings are still to come. The
-specification will live in this repository as a kadmos vault, in the child its root
-`.vault-root` names, with a dependency on `kadmos`, so that the plugin's own documentation
-is the first consumer of the mechanisms it navigates.
+Status: pre-alpha. The vault is found only where the markers put it: a `.vault-profile`
+at the root of the opened folder makes that folder the vault, a `.vault-root` there names
+the child that is. Without either Ariadne stays idle.
 
-Ariadne finds the kadmos vault only where the markers put it: a `.vault-profile` at the
-root of the opened folder makes that folder the vault, a `.vault-root` there names the
-child that is. Without either it stays idle.
+## What it does
 
-## What it will do
+- **References.** Every Markdown link to `kadmos://oikos/...` is marked, in reading view
+  and in the editor, with its resolution: resolved, stale, renamed, missing, invalid, or
+  naming a vault that is not a direct dependency. A click follows it (a modified click in
+  the source editor), the page preview shows its target, and typing after `kadmos://`
+  completes the authority, an active note path, a heading or an anchor slug.
+- **Code anchors.** On the desktop, Ariadne scans the repository of the vault for
+  `ariadne-kadmou[<slug>|<relation>|<reference>]` declarations: the opened folder, or its
+  parent when the parent's `.vault-root` names it. Dot-directories, `node_modules`, the
+  vault itself and files over 1 MiB are skipped. `kadmos://oikos/#<slug>` resolves to the
+  one declaration of that slug and opens the code at the address set in the settings
+  (`{url}` by default; `vscode://file/{path}:{line}` opens VS Code at the line). **Show
+  code anchors of this note** lists the anchors naming the note and what is wrong with its
+  `anchored_by`. The scan reruns when Obsidian regains focus and on **Rescan code
+  anchors**; malformed declarations are listed on the status bar item.
 
-- Resolve `kadmos://<authority>/<path>[#heading]` and `kadmos://<authority>/#<slug>`:
-  `oikos` for the vault itself, a canonical name for a direct dependency, looked up in the
-  dependency trees Pinax materialises. Hover preview, click to open, completion after
-  `kadmos://`.
-- Show anchors: which files tie themselves to a note, and the reverse, read from the
-  validator's scan of the repository.
-- Decorate notes with Lynkeus findings for stale, renamed and missing references and for
-  drift after a dependency update.
+## Still to come
+
+- Direct dependencies, once Pinax fixes its manifest and dependency root.
+- Lynkeus findings on the notes they concern, once Lynkeus fixes its output.
 
 The contract Ariadne follows is fixed in kadmos: `standards/cross-instance-references.md`,
 `standards/code-anchors.md` and decisions D-036 to D-039.
@@ -45,7 +47,7 @@ npm run build    # production build
 npm run format   # Prettier
 npm run typecheck
 npm run lint     # fails on any warning
-npm test         # node:test over test/, including the kadmos conformance vectors
+npm test         # node:test over test/ with the kadmos conformance vectors; src/core/ must stay fully covered
 npm run e2e      # builds, then runs test/e2e/ in real Obsidian
 ```
 

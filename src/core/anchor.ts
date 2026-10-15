@@ -3,7 +3,8 @@
 //   <comment> <marker>[<slug>|<relation>|<reference>] [<message>]
 
 import type { CodeAnchorContract, VaultContract } from './contract.ts';
-import { type NoteReference, type ParseResult, parseReference } from './reference.ts';
+import { type NoteReference, parseReference } from './reference.ts';
+import { fail, ok, type Result } from './result.ts';
 
 export interface AnchorDeclaration {
 	readonly slug: string;
@@ -25,7 +26,7 @@ const COMMENT_PREFIX = /^\s*(?:[^\p{L}\p{N}_\s]+\s*)?$/u;
 export function parseAnchorLine(
 	line: string,
 	contract: VaultContract & { readonly codeAnchors: CodeAnchorContract },
-): ParseResult<AnchorDeclaration> | undefined {
+): Result<AnchorDeclaration> | undefined {
 	const { marker, slugPattern, relations } = contract.codeAnchors;
 	const at = line.indexOf(marker);
 	if (at === -1) return undefined;
@@ -51,12 +52,5 @@ export function parseAnchorLine(
 	if (parsed.value.kind !== 'note') return fail('the reference names a note or a heading, never an anchor');
 
 	const message = tail.trim();
-	return {
-		ok: true,
-		value: { slug, relation, reference, target: parsed.value, ...(message === '' ? {} : { message }) },
-	};
-}
-
-function fail(reason: string): ParseResult<never> {
-	return { ok: false, reason };
+	return ok({ slug, relation, reference, target: parsed.value, ...(message === '' ? {} : { message }) });
 }

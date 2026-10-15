@@ -5,7 +5,7 @@ import { type Extension, RangeSetBuilder, StateEffect } from '@codemirror/state'
 import { Decoration, type DecorationSet, type EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { findReferenceLinks } from '../core/link-scan.ts';
 import { attributes } from './links.ts';
-import type { NoteIndex } from './note-index.ts';
+import type { KadmosIndex } from './kadmos-index.ts';
 
 // Asks an editor to mark its links again. A transaction carrying only this
 // effect leaves the document, the selection and an open suggestion alone,
@@ -16,7 +16,7 @@ export class EditorLinks {
 	readonly extension: Extension;
 	private readonly views = new Set<EditorView>();
 
-	constructor(index: () => NoteIndex | undefined) {
+	constructor(index: () => KadmosIndex | undefined) {
 		const views = this.views;
 		this.extension = ViewPlugin.fromClass(
 			class {
@@ -52,7 +52,7 @@ export class EditorLinks {
 	}
 }
 
-function build(view: EditorView, index: NoteIndex | undefined): DecorationSet {
+function build(view: EditorView, index: KadmosIndex | undefined): DecorationSet {
 	const builder = new RangeSetBuilder<Decoration>();
 	if (index === undefined) return builder.finish();
 	const tree = syntaxTree(view.state);

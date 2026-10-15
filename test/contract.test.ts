@@ -28,3 +28,16 @@ void test('a schema without retention roots is an error', () => {
 void test('a malformed schema is an error', () => {
 	assert.throws(() => parseContract('config { retention_projection {'), ContractError);
 });
+
+const anchors = (body: string): string =>
+	`config { retention_projection { root_directory: "archive" } code_anchors { marker: "m" reverse_field: "r" ${body} } }`;
+
+void test('an anchor contract with an invalid slug pattern or without relations is an error', () => {
+	assert.throws(() => parseContract(anchors('slug_pattern: "(" relation: "tests"')), ContractError);
+	assert.throws(() => parseContract(anchors('slug_pattern: "^a$"')), ContractError);
+	assert.throws(() => parseContract(anchors('relation: "tests"')), ContractError);
+});
+
+void test('a schema without config is an error', () => {
+	assert.throws(() => parseContract('version: 1'), ContractError);
+});

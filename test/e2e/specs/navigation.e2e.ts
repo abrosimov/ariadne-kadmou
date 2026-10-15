@@ -1,63 +1,7 @@
-import { $, $$, browser, expect } from '@wdio/globals';
+import { $, browser, expect } from '@wdio/globals';
+import { ACTIVE, activeFile, captureWindowOpen, clickLink, link, open, recorded, statuses } from '../support.ts';
 
 const SOURCE = 'docs/decisions/source.md';
-const ACTIVE = '.workspace-leaf.mod-active';
-
-type Mode = 'reading' | 'live-preview' | 'source';
-
-async function open(path: string, mode: Mode): Promise<void> {
-	await browser.executeObsidian(
-		async ({ app, obsidian }, file, viewMode) => {
-			const target = app.vault.getAbstractFileByPath(file);
-			if (!(target instanceof obsidian.TFile)) throw new Error(`no file ${file}`);
-			const leaf = app.workspace.getLeaf(false);
-			await leaf.setViewState({
-				type: 'markdown',
-				active: true,
-				state: { file, mode: viewMode === 'reading' ? 'preview' : 'source', source: viewMode === 'source' },
-			});
-			app.workspace.setActiveLeaf(leaf, { focus: true });
-		},
-		path,
-		mode,
-	);
-	await browser.waitUntil(async () => (await activeFile()) === path, { timeoutMsg: `${path} did not open` });
-	// Two Obsidian instances render side by side in CI; give a slow render time.
-	const container = mode === 'reading' ? '.markdown-reading-view' : '.markdown-source-view';
-	await $(`${ACTIVE} ${container} [data-kadmos-status]`).waitForExist({ timeout: 15_000 });
-}
-
-/** The marked link with this text in the active leaf. */
-async function link(container: string, text: string): Promise<WebdriverIO.Element> {
-	for (const element of await $$(`${ACTIVE} ${container} [data-kadmos-status]`).getElements()) {
-		if ((await element.getText()) === text) return element;
-	}
-	throw new Error(`no link "${text}" in ${container}`);
-}
-
-async function clickLink(container: string, text: string): Promise<void> {
-	const element = await link(container, text);
-	await element.click();
-}
-
-async function activeFile(): Promise<string | undefined> {
-	return await browser.executeObsidian(({ app }) => app.workspace.getActiveFile()?.path);
-}
-
-/** What a spy installed in the page recorded under a name. */
-async function recorded(name: string): Promise<string[]> {
-	return await browser.execute((key) => (window as unknown as Record<string, string[] | undefined>)[key] ?? [], name);
-}
-
-async function statuses(selector: string): Promise<Record<string, string>> {
-	const result: Record<string, string> = {};
-	for (const element of await $$(selector).getElements()) {
-		const status = await element.getAttribute('data-kadmos-status');
-		if (status !== null) result[await element.getText()] = status;
-	}
-	return result;
-}
-
 const EXPECTED: Record<string, string> = {
 	resolved: 'resolved',
 	heading: 'resolved',
@@ -67,25 +11,18 @@ const EXPECTED: Record<string, string> = {
 	'missing heading': 'missing',
 	invalid: 'invalid',
 	foreign: 'foreign',
-	anchor: 'unchecked',
+	anchor: 'missing',
 };
 
 describe('kadmos:// navigation', () => {
 	before(async () => {
 		await browser.reloadObsidian({ vault: 'test/e2e/vaults/navigation' });
 		// Nothing a test clicks may leave the app as an external link.
-		await browser.execute(() => {
-			const opened: string[] = [];
-			Object.assign(window, { ariadneOpened: opened });
-			window.open = (url?: string | URL) => {
-				opened.push(String(url));
-				return null;
-			};
-		});
+		await captureWindowOpen();
 	});
 
 	afterEach(async () => {
-		expect(await recorded('ariadneOpened')).toEqual([]);
+		expect(await recorded('opened')).toEqual([]);
 	});
 
 	describe('reading view', () => {

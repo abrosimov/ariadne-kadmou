@@ -10,6 +10,7 @@ const source: CompletionSource = {
 		'standards/validation.md',
 	],
 	headings: (_authority, path) => (path === 'standards/validation.md' ? ['Validation', 'Hard checks'] : []),
+	anchors: () => ['store-put', 'single-writer'],
 };
 
 void test('the authority is completed first', () => {
@@ -38,4 +39,14 @@ void test('headings are completed and encoded', () => {
 
 void test('an undeclared authority completes nothing', () => {
 	assert.deepEqual(complete('nomos/a', source), []);
+});
+
+void test('anchor slugs are completed after the hash', () => {
+	assert.deepEqual(complete('oikos/#put', source), [
+		{ label: 'store-put', reference: 'kadmos://oikos/#store-put', complete: true },
+	]);
+});
+
+void test('a malformed escape is matched as typed', () => {
+	assert.deepEqual(complete('oikos/%E0', source), []);
 });

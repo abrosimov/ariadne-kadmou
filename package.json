@@ -9,7 +9,7 @@
 		"build": "tsc --noEmit && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint . --max-warnings 0",
-		"test": "node --test \"test/**/*.test.ts\"",
+		"test": "node --test --experimental-test-coverage --test-coverage-include=\"src/core/**\" --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=95 \"test/**/*.test.ts\"",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"typecheck": "tsc --noEmit && tsc --noEmit -p test/e2e",
