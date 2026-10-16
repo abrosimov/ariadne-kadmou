@@ -79,6 +79,10 @@ which Git ignores.
 - `Taskfile.yml` points Corepack, the npm and XDG caches and the Obsidian downloads there
   as well. The committed `.taskrc.yml` makes those settings win over the caller's shell.
 - `pnpm-workspace.yaml` names the only dependencies whose install scripts may run.
+- Renovate follows the shared `abrosimov/renovate-config` preset. `renovate.json5` teaches
+  it the pins in `pins.env` and the pinned config validator. Renovate moves a version;
+  `task pins`, which CI runs, then names each digest that no longer matches what the
+  publisher states, for filling by hand.
 
 ```bash
 ./bin/bootstrap.sh                       # once per clone, and after a pin moves

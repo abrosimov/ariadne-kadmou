@@ -124,6 +124,15 @@ export default defineConfig(
 		},
 	},
 	{
+		// Build scripts run under Node, not in Obsidian: the plugin's network and logging rules do not apply.
+		files: ['scripts/**/*.ts'],
+		rules: {
+			'no-console': 'off',
+			'no-restricted-globals': 'off',
+			'obsidianmd/rule-custom-message': 'off',
+		},
+	},
+	{
 		// End-to-end specs run their callbacks in Obsidian's window, where `window` is the global.
 		files: ['test/e2e/**/*.ts'],
 		rules: { 'unicorn/prefer-global-this': 'off' },

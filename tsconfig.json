@@ -27,6 +27,6 @@
 		"allowSyntheticDefaultImports": true,
 		"lib": ["ES2022", "DOM", "DOM.Iterable"]
 	},
-	"include": ["src/**/*.ts", "test/**/*.ts", "eslint.config.mts", "wdio.conf.mts"],
+	"include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts", "eslint.config.mts", "wdio.conf.mts"],
 	"exclude": ["test/e2e"]
 }

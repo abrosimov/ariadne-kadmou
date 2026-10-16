@@ -1,0 +1,31 @@
+{
+	$schema: "https://docs.renovatebot.com/renovate-schema.json",
+	description: "The shared preset owns release ageing, grouping, security updates and major merge policy. Local rules teach Renovate the pins no built-in manager reads: the toolchain in pins.env and the pinned config validator in Taskfile.yml.",
+	extends: ["github>abrosimov/renovate-config#v3.2.0"],
+	customManagers: [
+		{
+			description: "The pinned Node lives in pins.env, a data file no built-in manager reads. Renovate only moves the version; `task pins` in CI then fails the pull request, naming each digest beside it and the value the publisher states.",
+			customType: "regex",
+			managerFilePatterns: ["/^pins\\.env$/"],
+			matchStrings: ["(^|\\n)NODE_VERSION=v(?<currentValue>\\d+\\.\\d+\\.\\d+)($|\\n)"],
+			depNameTemplate: "node",
+			datasourceTemplate: "node-version",
+		},
+		{
+			description: "The task runner is pinned in the same file, and reaches it the same way.",
+			customType: "regex",
+			managerFilePatterns: ["/^pins\\.env$/"],
+			matchStrings: ["(^|\\n)TASK_VERSION=(?<currentValue>v\\d+\\.\\d+\\.\\d+)($|\\n)"],
+			depNameTemplate: "go-task/task",
+			datasourceTemplate: "github-releases",
+		},
+		{
+			description: "The config validator that reads this file is pinned in the task that runs it: unpinned, it is an unaudited executable in the trusted path, and a release that adds a schema rule reds every pull request with nothing changed here. No built-in manager reads an npx --package argument.",
+			customType: "regex",
+			managerFilePatterns: ["/^Taskfile\\.yml$/"],
+			matchStrings: ["--package renovate@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+			depNameTemplate: "renovate",
+			datasourceTemplate: "npm",
+		},
+	],
+}

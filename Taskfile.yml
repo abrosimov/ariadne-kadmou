@@ -10,6 +10,7 @@ env:
     COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
     COREPACK_ENABLE_STRICT: '1'
     npm_config_cache: '{{.ROOT_DIR}}/.hermetic/stacks/node/npm-cache'
+    npm_config_update_notifier: 'false'
     XDG_CACHE_HOME: '{{.ROOT_DIR}}/.hermetic/xdg-cache'
 
 vars:
@@ -82,6 +83,14 @@ tasks:
             - task: lint
             - task: test
             - task: build
+
+    pins:
+        desc: Check every digest in pins.env against what its publisher states (online)
+        cmd: node scripts/check-pins.ts
+
+    renovate:validate:
+        desc: Validate renovate.json5 with the pinned Renovate
+        cmd: npx --yes --package renovate@44.164.6 renovate-config-validator --strict
 
     version:
         desc: 'Set the plugin version, for example: task version -- 0.2.0'
