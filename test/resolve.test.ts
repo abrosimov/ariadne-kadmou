@@ -50,3 +50,14 @@ void test('a dependency that is declared but not materialised is missing', () =>
 	});
 	assert.equal(resolution.outcome, 'missing');
 });
+
+void test('a renamed target is found among several notes of the same name', () => {
+	const parsed = parseReference('kadmos://oikos/a/n.md', contract);
+	assert.ok(parsed.ok && parsed.value.kind === 'note');
+	const resolution = resolveNote(parsed.value, {
+		contract,
+		directDependencies: new Set(),
+		vault: () => vaultFromFiles(['b/n.md', 'c/n.md'], () => []),
+	});
+	assert.deepEqual(resolution, { outcome: 'renamed', file: 'b/n.md' });
+});

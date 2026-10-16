@@ -8,35 +8,33 @@
 
 ## Environment & tooling
 
-- Node.js: 22.18 or later (tests run on Node's type stripping).
-- **Package manager: npm** (required for this sample - `package.json` defines npm scripts and dependencies).
+- Node.js: the version pinned in `pins.env`, installed by `bin/bootstrap.sh`.
+- **Hermetic toolchain**: `./bin/bootstrap.sh` installs the Node and Task pinned in `pins.env` below `.hermetic/`, then `task install` brings pnpm (pinned by `packageManager`) and the dependencies. Run every command through `.hermetic/stacks/node/bin/task <name>`; do not call node, pnpm or the tools directly.
 - **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
 - Types: `obsidian` type definitions.
-
-**Note**: This sample project has specific technical dependencies on npm and esbuild. If you're creating a plugin from scratch, you can choose different tools, but you'll need to replace the build configuration accordingly.
 
 ### Install
 
 ```bash
-npm install
+./bin/bootstrap.sh
 ```
 
 ### Dev (watch)
 
 ```bash
-npm run dev
+task dev
 ```
 
 ### Production build
 
 ```bash
-npm run build
+task build
 ```
 
 ## Linting
 
 - ESLint is preconfigured with `eslint-plugin-obsidianmd` for Obsidian-specific rules.
-- Run `npm run lint` to lint the project.
+- Run `task lint` to lint the project, and `task check` for everything CI checks.
 - A GitHub Action automatically lints every commit on all branches.
 
 ## File & folder conventions
@@ -251,7 +249,7 @@ this.registerInterval(
 ## Troubleshooting
 
 - Plugin doesn't load after build: ensure `main.js` and `manifest.json` are at the top level of the plugin folder under `<Vault>/.obsidian/plugins/<plugin-id>/`.
-- Build issues: if `main.js` is missing, run `npm run build` or `npm run dev` to compile your TypeScript source code.
+- Build issues: if `main.js` is missing, run `task build` or `task dev` to compile your TypeScript source code.
 - Commands not appearing: verify `addCommand` runs after `onload` and IDs are unique.
 - Settings not persisting: ensure `loadData`/`saveData` are awaited and you re-render the UI after changes.
 - Mobile-only issues: confirm you're not using desktop-only APIs; check `isDesktopOnly` and adjust.

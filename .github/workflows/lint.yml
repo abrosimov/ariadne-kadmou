@@ -1,4 +1,4 @@
-name: Node.js build
+name: Check
 
 on:
     push:
@@ -7,25 +7,22 @@ on:
         branches: ['**']
 
 jobs:
-    build:
+    check:
         runs-on: ubuntu-latest
-
-        strategy:
-            matrix:
-                node-version: [22.x, 24.x]
-                # Tests run TypeScript through Node's type stripping, which Node 20 lacks.
-                # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
         steps:
             - uses: actions/checkout@v6
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v6
+            - uses: actions/cache@v4
               with:
-                  node-version: ${{ matrix.node-version }}
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run format:check
-            - run: npm run typecheck
-            - run: npm run lint
-            - run: npm test
-            - run: npm run build
+                  path: |
+                      .hermetic/cache
+                      .hermetic/stacks/node/pnpm-store
+                      .hermetic/stacks/node/corepack
+                      .hermetic/xdg-cache
+                  key: hermetic-${{ hashFiles('pins.env', 'package.json', 'pnpm-lock.yaml') }}
+            # Installs the pinned Node and Task below .hermetic/, then task install.
+            - run: ./bin/bootstrap.sh
+            - run: .hermetic/stacks/node/bin/task check
+            # The digests in pins.env against what Node and Task publish, which is what a
+            # Renovate pull request moving a version needs filled.
+            - run: .hermetic/stacks/node/bin/task pins
+            - run: .hermetic/stacks/node/bin/task renovate:validate

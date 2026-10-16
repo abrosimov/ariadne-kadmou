@@ -1,23 +1,15 @@
 {
 	"name": "ariadne-kadmou",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"description": "Obsidian companion of kadmos: navigation over kadmos:// references and code anchors.",
 	"main": "main.js",
 	"type": "module",
-	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "tsc --noEmit && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"lint": "eslint . --max-warnings 0",
-		"test": "node --test \"test/**/*.test.ts\"",
-		"format": "prettier --write .",
-		"format:check": "prettier --check .",
-		"typecheck": "tsc --noEmit && tsc --noEmit -p test/e2e",
-		"e2e": "npm run build && wdio run ./wdio.conf.mts"
-	},
 	"keywords": [],
 	"license": "0-BSD",
 	"devDependencies": {
+		"@codemirror/language": "6.13.1",
+		"@codemirror/state": "6.5.0",
+		"@codemirror/view": "6.38.6",
 		"@eslint/js": "9.39.4",
 		"@types/mocha": "10.0.10",
 		"@types/node": "22.19.17",
@@ -25,6 +17,7 @@
 		"@wdio/globals": "9.31.3",
 		"@wdio/local-runner": "9.32.0",
 		"@wdio/mocha-framework": "9.32.0",
+		"@wdio/types": "9.32.0",
 		"esbuild": "0.25.5",
 		"eslint": "9.39.4",
 		"eslint-config-prettier": "10.1.8",
@@ -41,7 +34,8 @@
 		"wdio-obsidian-service": "3.3.0",
 		"webdriverio": "9.32.0"
 	},
-	"engines": {
-		"node": ">=22.18"
-	}
+	"dependencies": {
+		"ignore": "7.0.12"
+	},
+	"packageManager": "pnpm@12.11.2+sha512.25a51652a196785af5f28bda6dfe8dc582ebefa4ac1d180221ce1390231c5fb76637822ea4b6e4633ce74acdcb0a77f725af11bad38177fdeddaee818a955cb9"
 }

@@ -1,0 +1,97 @@
+# Every command of the project. A fresh clone runs ./bin/bootstrap.sh once; after that,
+# .hermetic/stacks/node/bin/task <name>, or `task --list` for the names.
+version: '3'
+
+# Path-valued state lives under .hermetic/, which Git ignores: the pinned Node and Task,
+# Corepack's pnpm, the pnpm store and package files, caches and the Obsidian downloads.
+env:
+    PATH: '{{.ROOT_DIR}}/.hermetic/stacks/node/bin:{{.ROOT_DIR}}/.hermetic/stacks/node/toolchain/bin:{{.PATH}}'
+    COREPACK_HOME: '{{.ROOT_DIR}}/.hermetic/stacks/node/corepack'
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    COREPACK_ENABLE_STRICT: '1'
+    npm_config_cache: '{{.ROOT_DIR}}/.hermetic/stacks/node/npm-cache'
+    npm_config_update_notifier: 'false'
+    XDG_CACHE_HOME: '{{.ROOT_DIR}}/.hermetic/xdg-cache'
+
+vars:
+    STACK: '{{.ROOT_DIR}}/.hermetic/stacks/node'
+    BIN: '{{.ROOT_DIR}}/node_modules/.bin'
+    TEST_COVERAGE: >-
+        --experimental-test-coverage --test-coverage-include="src/core/**"
+        --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=95
+    # Evaluated before any task. It checks the effect, not the setting: node must resolve to the
+    # pinned toolchain, which fails when .taskrc.yml lacks ENV_PRECEDENCE, when a Task too old to
+    # honour it runs, or when bootstrap has not run.
+    _HERMETIC_GUARD:
+        sh: |
+            node="$(command -v node || true)"
+            [ "$node" = "{{.ROOT_DIR}}/.hermetic/stacks/node/toolchain/bin/node" ] || {
+              echo "ERROR: node resolves to '$node', not the pinned toolchain in .hermetic/." >&2
+              echo "Run ./bin/bootstrap.sh, then .hermetic/stacks/node/bin/task; .taskrc.yml must enable ENV_PRECEDENCE." >&2
+              exit 1
+            }
+            echo ok
+
+tasks:
+    install:
+        desc: Install everything the tasks need, below .hermetic/; bootstrap runs it on a fresh clone
+        cmds:
+            - mkdir -p "{{.STACK}}/bin" "{{.STACK}}/corepack" "{{.ROOT_DIR}}/.hermetic/xdg-cache"
+            - corepack enable --install-directory "{{.STACK}}/bin" pnpm
+            - pnpm install --frozen-lockfile
+
+    dev:
+        desc: Rebuild main.js on every change
+        cmd: node esbuild.config.mjs
+
+    build:
+        desc: Typecheck and build main.js for production
+        deps: [typecheck]
+        cmd: node esbuild.config.mjs production
+
+    format:
+        desc: Format every file
+        cmd: '"{{.BIN}}/prettier" --write .'
+
+    format:check:
+        desc: Fail on any unformatted file
+        cmd: '"{{.BIN}}/prettier" --check .'
+
+    typecheck:
+        desc: Typecheck the plugin, its tests and the end-to-end specs
+        cmds:
+            - '"{{.BIN}}/tsc" --noEmit'
+            - '"{{.BIN}}/tsc" --noEmit -p test/e2e'
+
+    lint:
+        desc: Lint, failing on any warning
+        cmd: '"{{.BIN}}/eslint" . --max-warnings 0'
+
+    test:
+        desc: Unit tests with the kadmos conformance vectors; src/core must stay covered
+        cmd: node --test {{.TEST_COVERAGE}} "test/**/*.test.ts"
+
+    e2e:
+        desc: Build, then run the end-to-end tests in real Obsidian
+        deps: [build]
+        cmd: '"{{.BIN}}/wdio" run ./wdio.conf.mts'
+
+    check:
+        desc: Everything CI checks except the end-to-end tests
+        cmds:
+            - task: format:check
+            - task: lint
+            - task: test
+            - task: build
+
+    pins:
+        desc: Check every digest in pins.env against what its publisher states (online)
+        cmd: node scripts/check-pins.ts
+
+    renovate:validate:
+        desc: Validate renovate.json5 with the pinned Renovate
+        cmd: npx --yes --package renovate@44.164.6 renovate-config-validator --strict
+
+    version:
+        desc: 'Set the plugin version, for example: task version -- 0.2.0'
+        cmd: node version-bump.mjs {{.CLI_ARGS}}

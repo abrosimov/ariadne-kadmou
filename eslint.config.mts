@@ -12,13 +12,16 @@ import tseslint from 'typescript-eslint';
 export default defineConfig(
 	globalIgnores([
 		'node_modules',
+		'.hermetic',
 		'dist',
 		'main.js',
 		'esbuild.config.mjs',
 		'version-bump.mjs',
 		'versions.json',
 		'package.json',
-		'package-lock.json',
+		'pnpm-lock.yaml',
+		'pnpm-workspace.yaml',
+		'Taskfile.yml',
 		'tsconfig.json',
 	]),
 	{
@@ -108,6 +111,9 @@ export default defineConfig(
 				},
 			],
 
+			// toSorted is ES2023; minAppVersion 1.8.7 still runs on installers with Chrome 106.
+			'unicorn/no-array-sort': 'off',
+
 			// Unicorn: taste, not correctness.
 			'unicorn/prevent-abbreviations': 'off',
 			'unicorn/no-null': 'off',
@@ -116,6 +122,20 @@ export default defineConfig(
 			'unicorn/no-useless-undefined': ['error', { checkArguments: false, checkArrowFunctionBody: false }],
 			'unicorn/filename-case': ['error', { case: 'kebabCase' }],
 		},
+	},
+	{
+		// Build scripts run under Node, not in Obsidian: the plugin's network and logging rules do not apply.
+		files: ['scripts/**/*.ts'],
+		rules: {
+			'no-console': 'off',
+			'no-restricted-globals': 'off',
+			'obsidianmd/rule-custom-message': 'off',
+		},
+	},
+	{
+		// End-to-end specs run their callbacks in Obsidian's window, where `window` is the global.
+		files: ['test/e2e/**/*.ts'],
+		rules: { 'unicorn/prefer-global-this': 'off' },
 	},
 	prettier,
 );

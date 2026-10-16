@@ -12,13 +12,16 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 24.x
-                  cache: 'npm'
-            - run: npm ci
             - uses: actions/cache@v4
               with:
-                  path: .obsidian-cache
-                  key: obsidian-${{ hashFiles('manifest.json', 'package-lock.json') }}
-            - run: xvfb-run --auto-servernum npm run e2e
+                  path: |
+                      .hermetic/cache
+                      .hermetic/stacks/node/pnpm-store
+                      .hermetic/stacks/node/corepack
+                      .hermetic/xdg-cache
+                      .hermetic/stacks/node/obsidian-cache
+                  key: hermetic-e2e-${{ hashFiles('pins.env', 'package.json', 'pnpm-lock.yaml', 'manifest.json') }}
+            - run: ./bin/bootstrap.sh
+            # Without a DISPLAY, WebdriverIO gives each worker its own virtual display,
+            # so parallel Obsidian windows do not take focus from one another.
+            - run: .hermetic/stacks/node/bin/task e2e

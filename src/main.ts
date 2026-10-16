@@ -1,49 +1,97 @@
-import { Plugin } from 'obsidian';
-import { type KadmosVault, loadKadmosVault } from './vault.ts';
-
-export const STATUS_CLASS = 'ariadne-kadmou-status';
+import { debounce, Plugin, type TAbstractFile } from 'obsidian';
+import type { AnchorSite } from './core/anchor-index.ts';
+import { AnchorModal } from './obsidian/anchor-modal.ts';
+import { openCode } from './obsidian/code-anchors.ts';
+import { HOVER_SOURCE, LinkFollower } from './obsidian/links.ts';
+import { Session } from './obsidian/session.ts';
+import { ReferenceSuggest } from './obsidian/suggest.ts';
+import { listen, onEveryWindow } from './obsidian/windows.ts';
 
 export default class AriadnePlugin extends Plugin {
-	kadmos: KadmosVault = { kind: 'none' };
-	private statusEl!: HTMLElement;
+	session!: Session;
 
 	override onload(): void {
-		this.statusEl = this.addStatusBarItem();
-		this.statusEl.addClass(STATUS_CLASS);
-		this.statusEl.toggle(false);
+		const status = this.addStatusBarItem();
+		status.addClass('ariadne-kadmou-status');
+		status.toggle(false);
+		const session = new Session(this.app, status);
+		this.session = session;
+		this.register(() => {
+			session.close();
+		});
+
+		const open = (site: AnchorSite): void => {
+			const anchors = session.index?.anchors;
+			if (anchors !== undefined) void openCode(anchors, site);
+		};
 		this.addCommand({
 			id: 'reload-kadmos-vault',
 			name: 'Reload kadmos vault',
-			callback: () => void this.reload(),
+			callback: () => void session.reload(),
 		});
-		this.app.workspace.onLayoutReady(() => void this.reload());
-	}
+		this.addCommand({
+			id: 'rescan-code-anchors',
+			name: 'Rescan code anchors',
+			callback: () => void session.scan(),
+		});
+		this.addCommand({
+			id: 'show-code-anchors',
+			name: 'Show code anchors of this note',
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				const { index } = session;
+				const path = file === null ? undefined : index?.notePath(file.path);
+				if (index?.anchors === undefined || path === undefined) return false;
+				if (!checking)
+					new AnchorModal(this.app, index.anchors, { path, listed: index.anchoredBy(path) }, open).open();
+				return true;
+			},
+		});
 
-	private async reload(): Promise<void> {
-		this.kadmos = await loadKadmosVault(this.app);
-		this.renderStatus();
-	}
+		const follower = new LinkFollower(this.app, () => session.index, open);
+		this.registerHoverLinkSource(HOVER_SOURCE, { display: 'Ariadne kadmou', defaultMod: true });
+		onEveryWindow(this, (doc, win) => {
+			const removers = [
+				listen(doc, 'click', (event) => follower.click(event), { capture: true }),
+				listen(doc, 'mouseover', (event) => {
+					follower.hover(event);
+				}),
+				listen(win, 'focus', () => {
+					session.rescanIfStale();
+				}),
+			];
+			return () => {
+				for (const remove of removers) remove();
+			};
+		});
+		this.registerMarkdownPostProcessor((element) => {
+			session.postProcess(element);
+		});
+		this.registerEditorExtension(session.editorLinks.extension);
+		this.registerEditorSuggest(new ReferenceSuggest(this.app, () => session.index));
 
-	private renderStatus(): void {
-		const kadmos = this.kadmos;
-		this.statusEl.dataset['kadmos'] = kadmos.kind;
-		switch (kadmos.kind) {
-			case 'none': {
-				this.statusEl.toggle(false);
-				break;
-			}
-			case 'vault': {
-				this.statusEl.toggle(true);
-				this.statusEl.setText(`Kadmos: ${kadmos.path === '' ? '/' : kadmos.path} (${kadmos.profile})`);
-				this.statusEl.setAttr('aria-label', 'Kadmos vault located by its markers');
-				break;
-			}
-			case 'error': {
-				this.statusEl.toggle(true);
-				this.statusEl.setText('Kadmos: error');
-				this.statusEl.setAttr('aria-label', kadmos.reason);
-				break;
-			}
-		}
+		// A new, removed or moved note changes the index; an edited one only what its headings answer.
+		const reindex = debounce(() => {
+			session.reindex();
+		}, 300);
+		const refresh = debounce(() => {
+			session.refresh();
+		}, 300);
+		this.registerEvent(this.app.vault.on('create', onNote(reindex)));
+		this.registerEvent(this.app.vault.on('delete', onNote(reindex)));
+		this.registerEvent(this.app.vault.on('rename', onNote(reindex)));
+		this.registerEvent(this.app.metadataCache.on('changed', onNote(refresh)));
+		this.register(() => {
+			reindex.cancel();
+			refresh.cancel();
+		});
+
+		this.app.workspace.onLayoutReady(() => void session.reload());
 	}
+}
+
+function onNote(run: () => void): (file: TAbstractFile) => void {
+	return (file) => {
+		if (file.path.endsWith('.md')) run();
+	};
 }

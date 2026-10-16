@@ -4,6 +4,8 @@
 // names one immediate child that carries `.vault-profile`. A child marker
 // alone never selects the child, and there is no search.
 
+import { fail, ok, type Result } from './result.ts';
+
 export const PROFILE_MARKER = '.vault-profile';
 export const ROOT_MARKER = '.vault-root';
 
@@ -49,13 +51,13 @@ export async function locateVault(reader: MarkerReader): Promise<VaultLocation> 
 }
 
 // A marker is one UTF-8 line with one terminating LF and no surrounding whitespace.
-function markerLine(content: string, file: string): { ok: true; value: string } | { ok: false; reason: string } {
-	if (!content.endsWith('\n')) return { ok: false, reason: `${file} ends with one LF` };
+function markerLine(content: string, file: string): Result<string> {
+	if (!content.endsWith('\n')) return fail(`${file} ends with one LF`);
 	const value = content.slice(0, -1);
 	if (value === '' || /\s/u.test(value) || value.trim() !== value) {
-		return { ok: false, reason: `${file} holds one non-empty line without whitespace` };
+		return fail(`${file} holds one non-empty line without whitespace`);
 	}
-	return { ok: true, value };
+	return ok(value);
 }
 
 function error(reason: string): VaultLocation {

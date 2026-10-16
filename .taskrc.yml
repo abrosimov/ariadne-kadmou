@@ -1,0 +1,5 @@
+# ENV_PRECEDENCE=1 makes Taskfile's `env:` win over the caller's shell, so a
+# stray PATH, COREPACK_HOME or npm cache setting cannot defeat .hermetic/.
+# A guard in Taskfile.yml aborts when this file or the flag goes missing.
+experiments:
+    ENV_PRECEDENCE: 1

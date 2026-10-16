@@ -55,10 +55,7 @@ export function resolveNote(reference: NoteReference, context: ResolutionContext
 }
 
 /** A VaultView over a plain list of files, for tests and for snapshots. */
-export function vaultFromFiles(
-	files: Iterable<string>,
-	headings: (path: string) => readonly string[] = () => [],
-): VaultView {
+export function vaultFromFiles(files: Iterable<string>, headings: (path: string) => readonly string[]): VaultView {
 	const all = new Set(files);
 	const byName = new Map<string, string[]>();
 	for (const file of all) {

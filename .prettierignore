@@ -1,5 +1,6 @@
 main.js
-package-lock.json
+pnpm-lock.yaml
 test/vectors/
 test/e2e/vaults/
+.hermetic/
 .obsidian-cache/

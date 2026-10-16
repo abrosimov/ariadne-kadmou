@@ -59,3 +59,10 @@ for (const reference of [
 		assert.equal(parseReference(reference, contract).ok, false);
 	});
 }
+
+void test('parentheses are encoded, so a formatted reference survives as a Markdown link target', () => {
+	assert.equal(
+		formatReference({ kind: 'note', authority: 'oikos', path: 'a/D (draft).md', fragment: 'Why (not)' }),
+		'kadmos://oikos/a/D%20%28draft%29.md#Why%20%28not%29',
+	);
+});
